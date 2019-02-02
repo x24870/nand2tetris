@@ -12,3 +12,82 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+
+@8192
+D=A
+@max_offset
+M=D
+
+(LOOP)
+@screen_offset
+M=0
+//if keyboard == 0 then clear
+@KBD
+D=M
+@CLEAR
+D;JEQ
+@FILL
+0;JMP
+
+
+(FILL)
+//if screen_offset < 8192
+@screen_offset
+D=M
+@temp
+M=D
+@max_offset
+D=M
+@temp
+D=M-D
+@LOOP//finish fill
+D;JGE
+
+//fill
+@SCREEN
+D=A
+@addr
+M=D
+@screen_offset
+D=M
+@addr
+M=M+D
+A=M
+M=-1
+
+//offset++
+@screen_offset
+M=M+1
+@FILL
+0;JMP
+
+(CLEAR)
+//if screen_offset < 8192
+@screen_offset
+D=M
+@temp
+M=D
+@max_offset
+D=M
+@temp
+D=M-D
+@LOOP//finish clear
+D;JGE
+
+//clear
+@SCREEN
+D=A
+@addr
+M=D
+@screen_offset
+D=M
+@addr
+M=M+D
+A=M
+M=0
+
+//offset++
+@screen_offset
+M=M+1
+@CLEAR
+0;JMP
