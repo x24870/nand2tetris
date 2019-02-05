@@ -39,5 +39,66 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    //Mux1//
+    //if instruction[15] == 0
+    //  select instruction
+    //else
+    //  select ALUout
+    Mux16(a=instruction, b=ALUout, sel=instruction[15], out=Mux1out);
+    
+    //Reg A//
+    //if A instruction OR instruction[5] == 1
+    //  load Register A
+    Not(in=instruction[15], out=isAinstruction);
+    Or(a=isAinstruction, b=instruction[5], out=loadA);
+    Register(in=Mux1out, load=loadA, out=RegAout, out[0..14]=addressM);
+    
+    //Reg D//
+    //if C instruction AND instruction[4] == 1
+    // load Register D
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    Register(in=ALUout, load=loadD, out=RegDout);
+    
+    //Mux2//
+    //if C instruction AND instruction[12] == 1
+    //  select inM
+    //else
+    //  select Register A
+    And(a=instruction[15], b=instruction[12], out=selAM);
+    Mux16(a=RegAout, b=inM, sel=selAM, out=Mux2out);
+    
+    //PC//
+    //if C instruction
+    //  zr, ng are valid
+    And(a=instruction[15], b=zr, out=zrOut);
+    And(a=instruction[15], b=ng, out=ngOut);
+    //if match j1: outM < 0   
+    And(a=instruction[2], b=ngOut, out=j1out);
+    //if match j2: outM == 0
+    And(a=instruction[1], b=zrOut, out=j2out);
+    //if match j3: outM > 0
+    Not(in=zrOut, out=nzr);
+    Not(in=ngOut, out=nng);
+    And(a=nzr, b=nng, out=AndNzrNng);
+    And(a=instruction[0], b=AndNzrNng, out=j3out);
+    //if any jump bit is matched
+    //  PC load value
+    Or(a=j1out, b=j2out, out=j1j2out);
+    Or(a=j1j2out, b=j3out, out=jout);
+    And(a=jout, b=instruction[15], out=loadPc);
+    //if loadPc
+    //  load Register A
+    //else
+    //  PC++
+    Not(in=loadPc, out=nLoadPc);
+    PC(in=RegAout, load=loadPc, inc=nLoadPc, reset=reset, out[0..14]=pc);
+    
+    //ALU//
+    ALU(x=RegDout, y=Mux2out, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7],
+        no=instruction[6], out=outM, out=ALUout, zr=zr, ng=ng);
+        
+    //Write M//
+    //if C instruction AND instruction[3] == 1
+    //  write to memory
+    And(a=instruction[3], b=instruction[15], out=writeM);
 }
