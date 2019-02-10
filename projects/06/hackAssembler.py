@@ -5,12 +5,43 @@ class hackAssembler():
         self.asm_content = []
         self.machine_code = []
         self.filename = ''
+        self.symbol_table = preDefine.symbol_table
 
-    def first_pass():
-    #Convert the .asm file to symbol-less assembler language
-        pass
+    def first_pass(self):
+    #Add lables to symbol table and remove labels from asm code
+        label_num = -1
+        label_less_asm = []
+        for idx, line in enumerate(self.asm_content):
+            #print(idx, line)
+            if line.startswith('('):
+                label = line.strip('()')
+                label_num = label_num + 1
+                self.symbol_table[label] = idx - label_num
+                #print(label, self.symbol_table[label])
+            else:
+                label_less_asm.append(line)
+        self.asm_content = label_less_asm
+
 
     def second_pass(self):
+    #Add variables to symbol table and translate vriables and labels to value
+        var_val = 16
+        var_less_asm = []
+        for line in self.asm_content:
+            if line.startswith('@'):
+                line = line.strip('@')
+                if line.isdigit():
+                    line = '@' + line
+                elif line not in self.symbol_table:
+                    self.symbol_table[line] = var_val
+                    var_val = var_val + 1
+                    line = '@' + str(self.symbol_table[line])
+                else:
+                    line = '@' + str(self.symbol_table[line])
+            var_less_asm.append(line)
+        self.asm_content = var_less_asm
+
+    def generate_machine_code(self):
     #Convert the symbol-less assmebler language to machine code
         for line in self.asm_content:
             if line[0] == '@':
@@ -56,9 +87,7 @@ class hackAssembler():
         except:
             print("Can't open '{}'".format(filename))
             return
-
         f.close()
-
         self.remove_comment_and_white()
 
     def remove_comment_and_white(self):
@@ -79,7 +108,32 @@ class hackAssembler():
                 f.write(line+'\n')
 
 if __name__ == "__main__":
+    print('''
+    Usage: 
+    A. Symbol less asm file:
+        1. Init an hackAssembler
+        2. read_asd_file()
+        3. generate_machine_code()
+        4. output_machine_code
+
+    B. Asm file with symbol
+        1. Init an hackAssembler
+        2. read_asd_file()
+        3. first_pass()
+        4. second_pass()
+        5. generate_machine_code()
+        6. output_machine_code
+    ''')
+
+    
     asm = hackAssembler()
-    asm.read_asm_file('max/MaxL.asm')
+    asm.read_asm_file('pong/PongL.asm')
+    asm.generate_machine_code()
+    asm.output_machine_code()
+    
+    asm = hackAssembler()
+    asm.read_asm_file('pong/Pong.asm')
+    asm.first_pass()
     asm.second_pass()
+    asm.generate_machine_code()
     asm.output_machine_code()
