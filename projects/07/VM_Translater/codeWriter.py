@@ -1,13 +1,13 @@
 from vmParser import Parser
 
 RAM_ADDR_DEFINE = {
-    'local': '300',
-    'argument': '400',
-    'this': '3000',
-    'that': '3010',
+    'local': '1',
+    'argument': '2',
+    'this': '3',
+    'that': '4',
 }
 
-class codeWriter():
+class CodeWriter():
     def __init__(self):
         self.vm_code = []
         self.if_count = 0
@@ -112,13 +112,13 @@ class codeWriter():
     def _mem_seg_code(self, line):
         self.vm_code.append('//' + ' '.join(line))
         if line[1] in ['local', 'argument', 'this', 'that']:
-            self._seg_lcl_arg_this_that(line[0], RAM_ADDR_DEFINE[line[1]], line[2])
+            self._seg_lcl_arg_this_that(line[0], line[1], line[2])
         elif line[1] == 'constant':
             self._seg_constant(line[2])
         elif line[1] == 'static':
             self._seg_static(line[0], line[2])
         elif line[1] == 'pointer':
-            pass
+            self._seg_pointer(line[0], line[2])
         elif line[1] == 'temp':
             self._seg_temp(line[0], line[2])
         #print(self.vm_code)
@@ -127,12 +127,12 @@ class codeWriter():
         if action == 'push':
             #addr = mem_seg + index
             if index == '0':
-                self.vm_code.append('@' + mem_seg)
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get(mem_seg))
                 self.vm_code.append('A=M')
             else:
                 self.vm_code.append('@' + index)
                 self.vm_code.append('D=A')
-                self.vm_code.append('@' + mem_seg)
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get(mem_seg))
                 self.vm_code.append('D=D+M')
                 self.vm_code.append('A=D')
             self.vm_code.append('D=M')#*SP
@@ -146,12 +146,12 @@ class codeWriter():
         elif action == 'pop':
             #addr = mem_seg + index
             if index == '0':
-                self.vm_code.append('@' + mem_seg)
-                self.vm_code.append('D=A')
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get(mem_seg))
+                self.vm_code.append('D=M')
             else:
                 self.vm_code.append('@' + index)
                 self.vm_code.append('D=A')
-                self.vm_code.append('@' + mem_seg)
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get(mem_seg))
                 self.vm_code.append('D=D+M')
             #Store addr in R13 temperary(R13, R14, R15 are reserved for generate asm code)
             self.vm_code.append('@R13')
@@ -207,9 +207,13 @@ class codeWriter():
     def _seg_pointer(self, action, index):
         if action == 'push':
             #*SP = this/that
-            self.vm_code.append('@this') if index == '0' else self.vm_code.append('@that')
-            self.vm_code.append('D=A')
+            if index == '0':
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get('this'))
+            else:
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get('that'))
+            self.vm_code.append('D=M')
             self.vm_code.append('@0')
+            self.vm_code.append('A=M')
             self.vm_code.append('M=D')
             #SP++
             self.vm_code.append('@0')
@@ -221,7 +225,10 @@ class codeWriter():
             self.vm_code.append('A=M')
             self.vm_code.append('D=M')#*SP
             #this/that = *SP
-            self.vm_code.append('@this') if index == '0' else self.vm_code.append('@that')
+            if index == '0':
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get('this'))
+            else:
+                self.vm_code.append('@' + RAM_ADDR_DEFINE.get('that'))
             self.vm_code.append('M=D')
 
     def _seg_temp(self, action, index):
@@ -250,12 +257,12 @@ class codeWriter():
             self.vm_code.append('M=D')
 
 if __name__ == "__main__":
-    filename = '../StackArithmetic/StackTest/StackTest.vm'
+    filename = '../MemoryAccess/BasicTest/BasicTest.vm'
     parser_ = Parser()
     parser_.read_file(filename)
     parser_.parse_vm_code()
     parser_.close_file()
 
-    codeWriter = codeWriter()
+    codeWriter = CodeWriter()
     codeWriter.gen_hack_code(parser_.lines)
     codeWriter.write_to_file(filename.split('.vm')[0] + '.asm')
