@@ -28,7 +28,7 @@ class CodeWriter():
 
             elif 'goto' in line[0]:
                 #if-goto/goto
-                self._if_goto_code(line)
+                self._goto_if_goto_code(line)
 
                 #funtion call
 
@@ -270,20 +270,25 @@ class CodeWriter():
         self.vm_code.append('//' + ' '.join(line))
         self.vm_code.append('(' + line[1] + ')')
 
-    def _if_goto_code(self, line):
+    def _goto_if_goto_code(self, line):
         self.vm_code.append('//' + ' '.join(line))
-        #SP--
-        self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')#SP
-        self.vm_code.append('D=M')#*SP
-        #if
-        self.vm_code.append('@' + line[1])
-        self.vm_code.append('D;JGT')
+        if 'if' in line[0]:
+            #SP--
+            self.vm_code.append('@0')
+            self.vm_code.append('M=M-1')
+            self.vm_code.append('A=M')#SP
+            self.vm_code.append('D=M')#*SP
+            #if
+            self.vm_code.append('@' + line[1])
+            self.vm_code.append('D;JNE')
+        else:
+            self.vm_code.append('@' + line[1])
+            self.vm_code.append('0;JMP')
+
 
 
 if __name__ == "__main__":
-    filename = '../ProgramFlow/BasicLoop/BasicLoop.vm'
+    filename = '../ProgramFlow/FibonacciSeries/FibonacciSeries.vm'
     parser_ = Parser()
     parser_.read_file(filename)
     parser_.parse_vm_code()
