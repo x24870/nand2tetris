@@ -25,16 +25,20 @@ class CodeWriter():
             elif line[0] == 'label':
                 #label
                 self._label_code(line)
-
             elif 'goto' in line[0]:
                 #if-goto/goto
                 self._goto_if_goto_code(line)
             elif line[0] == 'function':
-                #funtion call
+                #funtion define
                 self._function_code(line)
+            elif line[0] == 'call':
+                #function call
+                self._call_code(line)
             elif line[0] == 'return':
                 #return
                 self._return_code(line)
+            else:
+                print('Error: unspecified VM code "{}"'.format(' '.join(line)))
 
     def write_to_file(self, filename):
         with open(filename, 'w') as f:
@@ -297,6 +301,27 @@ class CodeWriter():
         for i in range(int(line[2])):
             self._mem_seg_code('push constant 0'.split())
 
+    def _call_code(self, line):
+        self.vm_code.append('//' + ' '.join(line))
+        #ARG
+        #self.vm_code.append('@0')
+        #self.vm_code.append('D=M')
+        #for i in range line[2]:
+        #    self.vm_code.append('D=D-1')
+        #*SP=retAddr SP++
+
+        #*SP=savedLCL SP++
+
+        #*SP=savedARG SP++
+
+        #*SP=savedTHIS SP++
+
+        #*SP=savedTHAT SP++
+        
+        #ARG
+
+        #LCL
+
     def _return_code(self, line):
         # *** The excution squence in lecture is as following ***
         #   1.endFrame = LCL
@@ -308,25 +333,24 @@ class CodeWriter():
         #   7.ARG = *(endFrame - 3)
         #   8.LCL = *(endFrame - 4)
         #   9.goto retAddr
-        # *** But I chage step 2 to step 7, I thing it's more elegant ***
-        #   1.endFrame = LCL
-        #   2.*ARG = pop()
-        #   3.SP = ARG + 1
-        #   4.THAT = *(endFrame - 1)
-        #   5.THIS = *(endFrame - 2)
-        #   6.ARG = *(endFrame - 3)
-        #   7.LCL = *(endFrame - 4)
-        #   8.retAddr = *(endFrame - 5)
-        #   9.goto retAddr
 
         self.vm_code.append('//' + ' '.join(line))
         
         #endFrame = LCL
-        self.vm_code.append('//endFrame = LCL')
         #Store endFrame in R14 temporarily(R13, R14, R15 are reserved for generate asm code)
+        self.vm_code.append('//endFrame = LCL')
         self.vm_code.append('@1')
         self.vm_code.append('D=M')
         self.vm_code.append('@14')
+        self.vm_code.append('M=D')
+        #retAddr = *(endFrame - 5)
+        #Store retAddr in R15 temporarily(R13, R14, R15 are reserved for generate asm code)
+        self.vm_code.append('//retAddr = *(endFrame - 5)')
+        self.vm_code.append('@R14')
+        for i in range(5): self.vm_code.append('D=M-1')
+        self.vm_code.append('A=D')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@R15')
         self.vm_code.append('M=D')
         #*ARG = pop()
         self.vm_code.append('//*ARG = pop()')
@@ -369,20 +393,13 @@ class CodeWriter():
         self.vm_code.append('D=M')
         self.vm_code.append('@1')
         self.vm_code.append('M=D')
-        #retAddr = *(endFrame - 5)
-        #Store retAddr in R15 temporarily(R13, R14, R15 are reserved for generate asm code)
-        self.vm_code.append('//retAddr = *(endFrame - 5)')
-        self.vm_code.append('@R14')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')
-        self.vm_code.append('D=M')
-        self.vm_code.append('@R15')
-        self.vm_code.append('M=D')
         #goto retAddr
         self.vm_code.append('//goto retAddr')
+        self.vm_code.append('@R15')
         self.vm_code.append('0;JMP')
 
 if __name__ == "__main__":
+    #filename = '../FunctionCalls/NestedCall/Sys.vm'
     filename = '../FunctionCalls/SimpleFunction/SimpleFunction.vm'
     parser_ = Parser()
     parser_.read_file(filename)
