@@ -29,8 +29,12 @@ class CodeWriter():
             elif 'goto' in line[0]:
                 #if-goto/goto
                 self._goto_if_goto_code(line)
-
+            elif line[0] == 'function':
                 #funtion call
+                self._function_code(line)
+            elif line[0] == 'return':
+                #return
+                self._return_code(line)
 
     def write_to_file(self, filename):
         with open(filename, 'w') as f:
@@ -163,7 +167,7 @@ class CodeWriter():
                 self.vm_code.append('D=A')
                 self.vm_code.append('@' + RAM_ADDR_DEFINE.get(mem_seg))
                 self.vm_code.append('D=D+M')
-            #Store addr in R13 temperary(R13, R14, R15 are reserved for generate asm code)
+            #Store addr in R13 temporarily(R13, R14, R15 are reserved for generate asm code)
             self.vm_code.append('@R13')
             self.vm_code.append('M=D')
             #SP--
@@ -285,10 +289,101 @@ class CodeWriter():
             self.vm_code.append('@' + line[1])
             self.vm_code.append('0;JMP')
 
+    def _function_code(self, line):
+        self.vm_code.append('//' + ' '.join(line))
+        #(function.label)
+        self.vm_code.append('(' + line[1] + ')')
+        #Initialize local varialble to 0
+        for i in range(int(line[2])):
+            self._mem_seg_code('push constant 0'.split())
 
+    def _return_code(self, line):
+        # *** The excution squence in lecture is as following ***
+        #   1.endFrame = LCL
+        #   2.retAddr = *(endFrame - 5)
+        #   3.*ARG = pop()
+        #   4.SP = ARG + 1
+        #   5.THAT = *(endFrame - 1)
+        #   6.THIS = *(endFrame - 2)
+        #   7.ARG = *(endFrame - 3)
+        #   8.LCL = *(endFrame - 4)
+        #   9.goto retAddr
+        # *** But I chage step 2 to step 7, I thing it's more elegant ***
+        #   1.endFrame = LCL
+        #   2.*ARG = pop()
+        #   3.SP = ARG + 1
+        #   4.THAT = *(endFrame - 1)
+        #   5.THIS = *(endFrame - 2)
+        #   6.ARG = *(endFrame - 3)
+        #   7.LCL = *(endFrame - 4)
+        #   8.retAddr = *(endFrame - 5)
+        #   9.goto retAddr
+
+        self.vm_code.append('//' + ' '.join(line))
+        
+        #endFrame = LCL
+        self.vm_code.append('//endFrame = LCL')
+        #Store endFrame in R14 temporarily(R13, R14, R15 are reserved for generate asm code)
+        self.vm_code.append('@1')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@14')
+        self.vm_code.append('M=D')
+        #*ARG = pop()
+        self.vm_code.append('//*ARG = pop()')
+        self._mem_seg_code('pop argument 0'.split())
+        #SP = ARG + 1
+        self.vm_code.append('//#SP = ARG + 1')
+        self.vm_code.append('@2')
+        self.vm_code.append('D=M+1')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=D')
+        #THAT = *(endFrame - 1)
+        self.vm_code.append('//THAT = *(endFrame - 1)')
+        self.vm_code.append('@R14')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@4')
+        self.vm_code.append('M=D')
+        #THIS = *(endFrame - 2)
+        self.vm_code.append('//#THIS = *(endFrame - 2)')
+        self.vm_code.append('@R14')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@3')
+        self.vm_code.append('M=D')
+        #ARG = *(endFrame - 3)
+        self.vm_code.append('//#ARG = *(endFrame - 3)')
+        self.vm_code.append('@R14')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@2')
+        self.vm_code.append('M=D')
+        #LCL = *(endFrame - 4)
+        self.vm_code.append('//#LCL = *(endFrame - 4)')
+        self.vm_code.append('@R14')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@1')
+        self.vm_code.append('M=D')
+        #retAddr = *(endFrame - 5)
+        #Store retAddr in R15 temporarily(R13, R14, R15 are reserved for generate asm code)
+        self.vm_code.append('//retAddr = *(endFrame - 5)')
+        self.vm_code.append('@R14')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@R15')
+        self.vm_code.append('M=D')
+        #goto retAddr
+        self.vm_code.append('//goto retAddr')
+        self.vm_code.append('0;JMP')
 
 if __name__ == "__main__":
-    filename = '../ProgramFlow/FibonacciSeries/FibonacciSeries.vm'
+    filename = '../FunctionCalls/SimpleFunction/SimpleFunction.vm'
     parser_ = Parser()
     parser_.read_file(filename)
     parser_.parse_vm_code()
