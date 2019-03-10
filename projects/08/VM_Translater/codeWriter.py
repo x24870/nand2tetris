@@ -11,16 +11,26 @@ class CodeWriter():
     def __init__(self):
         self.vm_code = []
         self.if_count = 0
+        self.label_table = {}
 
     def gen_hack_code(self, lines):
         for line in lines:
             line = line.split()#type list
-            if len(line) == 1:
+            if line[0] in ['add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not']:
                 #arithmetic instruction
                 self._arithmetic_code(line[0])
-            else:
+            elif line[0] in ['push', 'pop']:
                 #memory instruction
                 self._mem_seg_code(line)
+            elif line[0] == 'label':
+                #label
+                self._label_code(line)
+
+            elif 'goto' in line[0]:
+                #if-goto/goto
+                self._if_goto_code(line)
+
+                #funtion call
 
     def write_to_file(self, filename):
         with open(filename, 'w') as f:
@@ -256,8 +266,24 @@ class CodeWriter():
             self.vm_code.append('@' + str(TEMP_TEMP_ADDR + int(index)))
             self.vm_code.append('M=D')
 
+    def _label_code(self, line):
+        self.vm_code.append('//' + ' '.join(line))
+        self.vm_code.append('(' + line[1] + ')')
+
+    def _if_goto_code(self, line):
+        self.vm_code.append('//' + ' '.join(line))
+        #SP--
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')#SP
+        self.vm_code.append('D=M')#*SP
+        #if
+        self.vm_code.append('@' + line[1])
+        self.vm_code.append('D;JGT')
+
+
 if __name__ == "__main__":
-    filename = '../MemoryAccess/BasicTest/BasicTest.vm'
+    filename = '../ProgramFlow/BasicLoop/BasicLoop.vm'
     parser_ = Parser()
     parser_.read_file(filename)
     parser_.parse_vm_code()

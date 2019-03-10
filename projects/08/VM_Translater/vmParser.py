@@ -19,8 +19,6 @@ class Parser():
             if not line.startswith('//') and line:
                 self.lines.append(line)
 
-def test():
-    print('asdasd')
 
 if __name__ == "__main__":
     parser = Parser()
