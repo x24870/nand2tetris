@@ -12,6 +12,7 @@ class CodeWriter():
         self.vm_code = []
         self.if_count = 0
         self.label_table = {}
+        self._asm_ignored_line_count = 0
 
     def gen_hack_code(self, lines):
         for line in lines:
@@ -45,8 +46,12 @@ class CodeWriter():
             for line in self.vm_code:
                 f.write(line + '\n')
 
+    def _add_asm_comment(self, comment):
+        self.vm_code.append('//' + comment + '  ' + str(len(self.vm_code) - self._asm_ignored_line_count))
+        self._asm_ignored_line_count += 1
+
     def _arithmetic_code(self, line):
-        self.vm_code.append('//' + line)
+        self._add_asm_comment(line)
         if line == 'add':
             self.vm_code.append('@0')
             self.vm_code.append('A=M-1')
@@ -128,7 +133,7 @@ class CodeWriter():
             self.vm_code.append('M=!M')
 
     def _mem_seg_code(self, line):
-        self.vm_code.append('//' + ' '.join(line))
+        self._add_asm_comment(' '.join(line))
         if line[1] in ['local', 'argument', 'this', 'that']:
             self._seg_lcl_arg_this_that(line[0], line[1], line[2])
         elif line[1] == 'constant':
@@ -275,11 +280,12 @@ class CodeWriter():
             self.vm_code.append('M=D')
 
     def _label_code(self, line):
-        self.vm_code.append('//' + ' '.join(line))
+        self._add_asm_comment(' '.join(line))
         self.vm_code.append('(' + line[1] + ')')
+        self._asm_ignored_line_count += 1
 
     def _goto_if_goto_code(self, line):
-        self.vm_code.append('//' + ' '.join(line))
+        self._add_asm_comment(' '.join(line))
         if 'if' in line[0]:
             #SP--
             self.vm_code.append('@0')
@@ -294,33 +300,79 @@ class CodeWriter():
             self.vm_code.append('0;JMP')
 
     def _function_code(self, line):
-        self.vm_code.append('//' + ' '.join(line))
+        self._add_asm_comment(' '.join(line))
         #(function.label)
         self.vm_code.append('(' + line[1] + ')')
+        self._asm_ignored_line_count += 1
         #Initialize local varialble to 0
         for i in range(int(line[2])):
             self._mem_seg_code('push constant 0'.split())
+            self._mem_seg_code(('pop local ' + str(i)).split())
 
     def _call_code(self, line):
-        self.vm_code.append('//' + ' '.join(line))
-        #ARG
-        #self.vm_code.append('@0')
-        #self.vm_code.append('D=M')
-        #for i in range line[2]:
-        #    self.vm_code.append('D=D-1')
+        self._add_asm_comment(' '.join(line))
         #*SP=retAddr SP++
-
+        self._add_asm_comment('*SP=retAddr SP++')
+        self.vm_code.append('@0')
+        self.vm_code.append('D=M')
+        for i in range(int(line[2])): self.vm_code.append('D=D-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('M=D')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M+1')
         #*SP=savedLCL SP++
-
+        self._add_asm_comment('*SP=savedLCL SP++')
+        self.vm_code.append('@1')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@0')
+        self.vm_code.append('A=M')
+        self.vm_code.append('M=D')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M+1')
         #*SP=savedARG SP++
-
+        self._add_asm_comment('*SP=savedARG SP++')
+        self.vm_code.append('@2')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@0')
+        self.vm_code.append('A=M')
+        self.vm_code.append('M=D')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M+1')
         #*SP=savedTHIS SP++
-
+        self._add_asm_comment('*SP=savedTHIS SP++')
+        self.vm_code.append('@3')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@0')
+        self.vm_code.append('A=M')
+        self.vm_code.append('M=D')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M+1')
         #*SP=savedTHAT SP++
-        
+        self._add_asm_comment('*SP=savedTHAT SP++')
+        self.vm_code.append('@4')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@0')
+        self.vm_code.append('A=M')
+        self.vm_code.append('M=D')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M+1')
         #ARG
-
+        self._add_asm_comment('ARG')
+        self.vm_code.append('@0')
+        self.vm_code.append('D=M')
+        for i in range(int(line[2])+5): self.vm_code.append('D=D-1')
+        self.vm_code.append('@2')
+        self.vm_code.append('M=D')
         #LCL
+        self._add_asm_comment('LCL')
+        self.vm_code.append('@0')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@1')
+        self.vm_code.append('M=D')
+        #jump to function
+        self._add_asm_comment('jump to function')
+        self.vm_code.append('@' + line[1])
+        self.vm_code.append('0;JMP')
 
     def _return_code(self, line):
         # *** The excution squence in lecture is as following ***
@@ -334,35 +386,36 @@ class CodeWriter():
         #   8.LCL = *(endFrame - 4)
         #   9.goto retAddr
 
-        self.vm_code.append('//' + ' '.join(line))
+        self._add_asm_comment(' '.join(line))
         
         #endFrame = LCL
         #Store endFrame in R14 temporarily(R13, R14, R15 are reserved for generate asm code)
-        self.vm_code.append('//endFrame = LCL')
+        self._add_asm_comment('endFrame = LCL')
         self.vm_code.append('@1')
         self.vm_code.append('D=M')
         self.vm_code.append('@14')
         self.vm_code.append('M=D')
         #retAddr = *(endFrame - 5)
         #Store retAddr in R15 temporarily(R13, R14, R15 are reserved for generate asm code)
-        self.vm_code.append('//retAddr = *(endFrame - 5)')
+        self._add_asm_comment('retAddr = *(endFrame - 5)')
         self.vm_code.append('@R14')
-        for i in range(5): self.vm_code.append('D=M-1')
+        self.vm_code.append('D=M')
+        for i in range(5): self.vm_code.append('D=D-1')
         self.vm_code.append('A=D')
         self.vm_code.append('D=M')
         self.vm_code.append('@R15')
         self.vm_code.append('M=D')
         #*ARG = pop()
-        self.vm_code.append('//*ARG = pop()')
+        self._add_asm_comment('*ARG = pop()')
         self._mem_seg_code('pop argument 0'.split())
         #SP = ARG + 1
-        self.vm_code.append('//#SP = ARG + 1')
+        self._add_asm_comment('SP = ARG + 1')
         self.vm_code.append('@2')
         self.vm_code.append('D=M+1')
         self.vm_code.append('@0')
         self.vm_code.append('M=D')
         #THAT = *(endFrame - 1)
-        self.vm_code.append('//THAT = *(endFrame - 1)')
+        self._add_asm_comment('THAT = *(endFrame - 1)')
         self.vm_code.append('@R14')
         self.vm_code.append('M=M-1')
         self.vm_code.append('A=M')
@@ -370,7 +423,7 @@ class CodeWriter():
         self.vm_code.append('@4')
         self.vm_code.append('M=D')
         #THIS = *(endFrame - 2)
-        self.vm_code.append('//#THIS = *(endFrame - 2)')
+        self._add_asm_comment('THIS = *(endFrame - 2)')
         self.vm_code.append('@R14')
         self.vm_code.append('M=M-1')
         self.vm_code.append('A=M')
@@ -378,7 +431,7 @@ class CodeWriter():
         self.vm_code.append('@3')
         self.vm_code.append('M=D')
         #ARG = *(endFrame - 3)
-        self.vm_code.append('//#ARG = *(endFrame - 3)')
+        self._add_asm_comment('ARG = *(endFrame - 3)')
         self.vm_code.append('@R14')
         self.vm_code.append('M=M-1')
         self.vm_code.append('A=M')
@@ -386,7 +439,7 @@ class CodeWriter():
         self.vm_code.append('@2')
         self.vm_code.append('M=D')
         #LCL = *(endFrame - 4)
-        self.vm_code.append('//#LCL = *(endFrame - 4)')
+        self._add_asm_comment('LCL = *(endFrame - 4)')
         self.vm_code.append('@R14')
         self.vm_code.append('M=M-1')
         self.vm_code.append('A=M')
@@ -394,13 +447,13 @@ class CodeWriter():
         self.vm_code.append('@1')
         self.vm_code.append('M=D')
         #goto retAddr
-        self.vm_code.append('//goto retAddr')
+        self._add_asm_comment('goto retAddr')
         self.vm_code.append('@R15')
         self.vm_code.append('0;JMP')
 
 if __name__ == "__main__":
-    #filename = '../FunctionCalls/NestedCall/Sys.vm'
-    filename = '../FunctionCalls/SimpleFunction/SimpleFunction.vm'
+    filename = '../FunctionCalls/NestedCall/NestedCall.vm'
+    #filename = '../FunctionCalls/SimpleFunction/SimpleFunction.vm'
     parser_ = Parser()
     parser_.read_file(filename)
     parser_.parse_vm_code()
