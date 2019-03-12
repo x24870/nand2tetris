@@ -1,5 +1,5 @@
 // Sys.vm for NestedCall test.
-
+call Sys.init 0
 // Sys.init()
 //
 // Calls Sys.main() and stores return value in temp 1.

@@ -1,12 +1,12 @@
+import os
 from vmParser import Parser
 from codeWriter import CodeWriter
 
-filename = '../MemoryAccess/BasicTest/BasicTest.vm'
+path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
+#path = os.path.join('..', 'ProgramFlow', 'BasicLoop', 'BasicLoop.vm')
 parser_ = Parser()
-parser_.read_file(filename)
-parser_.parse_vm_code()
-parser_.close_file()
+parser_.read(path)
 
 codeWriter = CodeWriter()
 codeWriter.gen_hack_code(parser_.lines)
-codeWriter.write_to_file(filename.split('.vm')[0] + '.asm')
+codeWriter.write_to_file(path)

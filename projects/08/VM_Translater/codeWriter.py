@@ -1,3 +1,4 @@
+import os
 from vmParser import Parser
 
 RAM_ADDR_DEFINE = {
@@ -41,8 +42,18 @@ class CodeWriter():
             else:
                 print('Error: unspecified VM code "{}"'.format(' '.join(line)))
 
-    def write_to_file(self, filename):
-        with open(filename, 'w') as f:
+    def write_to_file(self, path):
+        if os.path.basename(path).endswith('.vm'):
+            filename = os.path.basename(path)
+            directory = os.path.dirname(path)
+            filename = filename.split('.vm')[0] + '.asm'
+        else:
+            directory = path
+            filename = os.path.basename(path) + '.asm'
+        path = os.path.join(directory, filename)
+        print('Output: {}'.format(path))
+
+        with open(path, 'w') as f:
             for line in self.vm_code:
                 f.write(line + '\n')
 
@@ -452,13 +463,12 @@ class CodeWriter():
         self.vm_code.append('0;JMP')
 
 if __name__ == "__main__":
-    filename = '../FunctionCalls/NestedCall/NestedCall.vm'
-    #filename = '../FunctionCalls/SimpleFunction/SimpleFunction.vm'
+    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
+    #path = os.path.join('..', 'ProgramFlow', 'BasicLoop', 'BasicLoop.vm')
     parser_ = Parser()
-    parser_.read_file(filename)
-    parser_.parse_vm_code()
-    parser_.close_file()
+    parser_.read(path)
+
 
     codeWriter = CodeWriter()
     codeWriter.gen_hack_code(parser_.lines)
-    codeWriter.write_to_file(filename.split('.vm')[0] + '.asm')
+    codeWriter.write_to_file(path)
