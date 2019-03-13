@@ -15,7 +15,11 @@ class CodeWriter():
         self.label_table = {}
         self._asm_ignored_line_count = 0
 
-    def gen_hack_code(self, lines):
+    def gen_hack_code(self, lines, gen_init_code):
+        if gen_init_code:
+            self._add_asm_comment('Initialize')
+            self._call_code('call Sys.init 0'.split())
+
         for line in lines:
             line = line.split()#type list
             if line[0] in ['add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not']:
@@ -470,5 +474,5 @@ if __name__ == "__main__":
 
 
     codeWriter = CodeWriter()
-    codeWriter.gen_hack_code(parser_.lines)
+    codeWriter.gen_hack_code(parser_.lines, parser_.is_dir)
     codeWriter.write_to_file(path)

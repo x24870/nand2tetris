@@ -8,5 +8,5 @@ parser_ = Parser()
 parser_.read(path)
 
 codeWriter = CodeWriter()
-codeWriter.gen_hack_code(parser_.lines)
+codeWriter.gen_hack_code(parser_.lines, parser_.is_dir)
 codeWriter.write_to_file(path)

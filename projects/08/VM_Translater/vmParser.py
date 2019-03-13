@@ -3,9 +3,11 @@ import os
 class Parser():
     def __init__(self):
         self.lines = []
+        self.is_dir = False
 
     def read(self, dir):
         if os.path.isdir(dir):
+            self.is_dir = True
             for f in os.listdir(dir):
                 if f.endswith('.vm'):
                     self._read_file(os.path.join(dir, f))
