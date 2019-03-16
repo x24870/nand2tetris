@@ -17,8 +17,7 @@ class CodeWriter():
 
     def gen_hack_code(self, lines, gen_init_code):
         if gen_init_code:
-            self._add_asm_comment('Initialize')
-            self._call_code('call Sys.init 0'.split())
+            self._init_code()
 
         for line in lines:
             line = line.split()#type list
@@ -320,17 +319,25 @@ class CodeWriter():
         self.vm_code.append('(' + line[1] + ')')
         self._asm_ignored_line_count += 1
         #Initialize local varialble to 0
+        self._add_asm_comment('Initialize local varialble to 0')
         for i in range(int(line[2])):
-            self._mem_seg_code('push constant 0'.split())
-            self._mem_seg_code(('pop local ' + str(i)).split())
+            #self._mem_seg_code('push constant 0'.split())
+            #self._mem_seg_code(('pop local ' + str(i)).split())
+            self._add_asm_comment('*SP = 0')
+            self.vm_code.append('@0')
+            self.vm_code.append('A=M')
+            self.vm_code.append('M=0')
+            self._add_asm_comment('SP++')
+            self.vm_code.append('@0')
+            self.vm_code.append('M=M+1')
 
     def _call_code(self, line):
         self._add_asm_comment(' '.join(line))
         #*SP=retAddr SP++
         self._add_asm_comment('*SP=retAddr SP++')
+        self.vm_code.append('@' + line[1] + '$ret')
+        self.vm_code.append('D=A')
         self.vm_code.append('@0')
-        self.vm_code.append('D=M')
-        for i in range(int(line[2])): self.vm_code.append('D=D-1')
         self.vm_code.append('A=M')
         self.vm_code.append('M=D')
         self.vm_code.append('@0')
@@ -388,6 +395,7 @@ class CodeWriter():
         self._add_asm_comment('jump to function')
         self.vm_code.append('@' + line[1])
         self.vm_code.append('0;JMP')
+        self._label_code('label {}$ret'.format(line[1]).split())
 
     def _return_code(self, line):
         # *** The excution squence in lecture is as following ***
@@ -464,11 +472,51 @@ class CodeWriter():
         #goto retAddr
         self._add_asm_comment('goto retAddr')
         self.vm_code.append('@R15')
+        self.vm_code.append('A=M')
         self.vm_code.append('0;JMP')
 
+    def _init_code(self):
+        self._add_asm_comment('Initialize')
+        #THAT = *(SP - 1)
+        self._add_asm_comment('THAT = *(SP - 1)')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@4')
+        self.vm_code.append('M=D')
+        #THIS = *(SP - 2)
+        self._add_asm_comment('THIS = *(SP - 2)')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@3')
+        self.vm_code.append('M=D')
+        #ARG = *(SP - 3)
+        self._add_asm_comment('ARG = *(SP - 3)')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@2')
+        self.vm_code.append('M=D')
+        #LCL = *(SP - 4)
+        self._add_asm_comment('LCL = *(SP - 4)')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+        self.vm_code.append('A=M')
+        self.vm_code.append('D=M')
+        self.vm_code.append('@1')
+        self.vm_code.append('M=D')
+        #SP--
+        self._add_asm_comment('SP--')
+        self.vm_code.append('@0')
+        self.vm_code.append('M=M-1')
+
 if __name__ == "__main__":
-    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
-    #path = os.path.join('..', 'ProgramFlow', 'BasicLoop', 'BasicLoop.vm')
+    path = os.path.join('..', 'FunctionCalls', 'NestedCall')
+    #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)
 
