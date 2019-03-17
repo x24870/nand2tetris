@@ -15,7 +15,9 @@ class CodeWriter():
         self.if_count = 0
         self._asm_ignored_line_count = 0
         self._current_file = ''
-        self._func_be_called = {}#{func: count}
+        self._func_be_called = {} #{func: count}
+        self._static_addr_table = {} #{file: addr}
+        self._static_base_addr = 16 #static memory segment: 16~255
 
     def gen_hack_code(self, lines, gen_init_code):
         if gen_init_code:
@@ -226,12 +228,17 @@ class CodeWriter():
         self.vm_code.append('M=M+1')
 
     def _seg_static(self, action, index):
-        #Regardint to pop action, I didn't follow the advise in lecture
-        #Because I think my way is more elegant
+        val_name = '{}.static.{}'.format(self._current_file, index)
+        if self._static_addr_table.get(val_name):
+            pass
+        else:
+            self._static_addr_table[val_name] = self._static_base_addr
+            self._static_base_addr += 1
+
         TEMP_STATIC_ADDR = 16
         if action == 'push':
             #addr = static + index
-            self.vm_code.append('@' + str(TEMP_STATIC_ADDR + int(index)))
+            self.vm_code.append('@' + str(self._static_addr_table[val_name]))
             self.vm_code.append('D=M')
             #*SP = *addr
             self.vm_code.append('@0')
@@ -247,7 +254,7 @@ class CodeWriter():
             self.vm_code.append('A=M')
             self.vm_code.append('D=M')#*SP
             #*addr = *SP
-            self.vm_code.append('@' + str(TEMP_STATIC_ADDR + int(index)))
+            self.vm_code.append('@' + str(self._static_addr_table[val_name]))
             self.vm_code.append('M=D')
 
     def _seg_pointer(self, action, index):
@@ -343,7 +350,7 @@ class CodeWriter():
             self._func_be_called[line[1]] += 1
         else:
             self._func_be_called[line[1]] = 1
-        print(self._func_be_called)
+        #print(self._func_be_called)
         self._add_asm_comment(' '.join(line))
         #*SP=retAddr SP++
         self._add_asm_comment('*SP=retAddr SP++')
@@ -514,7 +521,7 @@ class CodeWriter():
         self.vm_code.append('M=D')
 
 if __name__ == "__main__":
-    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
+    path = os.path.join('..', 'FunctionCalls', 'StaticsTest')
     #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)
