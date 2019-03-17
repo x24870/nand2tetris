@@ -49,6 +49,8 @@ class CodeWriter():
                 self._current_file = line[0].split(FILE_NAME_TAG)[1]
                 self._add_asm_comment(line[0])
                 print("Processing file: {}".format(self._current_file))
+                #reset self._func_be_called
+                self._func_be_called.clear()
             else:
                 print('Error: unspecified VM code "{}"'.format(' '.join(line)))
 
@@ -327,8 +329,6 @@ class CodeWriter():
         #Initialize local varialble to 0
         self._add_asm_comment('Initialize local varialble to 0')
         for i in range(int(line[2])):
-            #self._mem_seg_code('push constant 0'.split())
-            #self._mem_seg_code(('pop local ' + str(i)).split())
             self._add_asm_comment('*SP = 0')
             self.vm_code.append('@0')
             self.vm_code.append('A=M')
@@ -338,10 +338,16 @@ class CodeWriter():
             self.vm_code.append('M=M+1')
 
     def _call_code(self, line):
+        #count the how many time this function be called
+        if self._func_be_called.get(line[1]):
+            self._func_be_called[line[1]] += 1
+        else:
+            self._func_be_called[line[1]] = 1
+        print(self._func_be_called)
         self._add_asm_comment(' '.join(line))
         #*SP=retAddr SP++
         self._add_asm_comment('*SP=retAddr SP++')
-        self.vm_code.append('@' + line[1] + '$ret')
+        self.vm_code.append('@{}:{}$ret.{}'.format(self._current_file, line[1], self._func_be_called[line[1]]))
         self.vm_code.append('D=A')
         self.vm_code.append('@0')
         self.vm_code.append('A=M')
@@ -401,7 +407,7 @@ class CodeWriter():
         self._add_asm_comment('jump to function')
         self.vm_code.append('@' + line[1])
         self.vm_code.append('0;JMP')
-        self._label_code('label {}$ret'.format(line[1]).split())
+        self._label_code('label {}:{}$ret.{}'.format(self._current_file,line[1], self._func_be_called[line[1]]).split())
 
     def _return_code(self, line):
         # *** The excution squence in lecture is as following ***
@@ -512,7 +518,6 @@ if __name__ == "__main__":
     #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)
-
 
     codeWriter = CodeWriter()
     codeWriter.gen_hack_code(parser_.lines, parser_.is_dir)
