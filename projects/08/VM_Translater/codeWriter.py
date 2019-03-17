@@ -20,7 +20,8 @@ class CodeWriter():
 
     def gen_hack_code(self, lines, gen_init_code):
         if gen_init_code:
-            self._init_code()
+            self._bootstrap_code()
+            self._call_code('call Sys.init 0'.split())
 
         for line in lines:
             line = line.split()#type list
@@ -47,6 +48,7 @@ class CodeWriter():
                 self._return_code(line)
             elif line[0].startswith(FILE_NAME_TAG):
                 self._current_file = line[0].split(FILE_NAME_TAG)[1]
+                self._add_asm_comment(line[0])
                 print("Processing file: {}".format(self._current_file))
             else:
                 print('Error: unspecified VM code "{}"'.format(' '.join(line)))
@@ -101,7 +103,7 @@ class CodeWriter():
             self.vm_code.append('D=M-D')
             #if x == 0 jump to (IF) else jump to (ELSE)
             #then both of these two result will jump to (ENDIF)
-            self.vm_code.append('@IF' + str(self.if_count))#modify: use xxx.foo$bar
+            self.vm_code.append('@IF' + str(self.if_count))
             if line == 'eq':
                 self.vm_code.append('D;JEQ')
             elif line == 'gt':
@@ -481,47 +483,35 @@ class CodeWriter():
         self.vm_code.append('A=M')
         self.vm_code.append('0;JMP')
 
-    def _init_code(self):
-        self._add_asm_comment('Initialize')
-        #THAT = *(SP - 1)
-        self._add_asm_comment('THAT = *(SP - 1)')
+    def _bootstrap_code(self):
+        self._add_asm_comment('bootstrap code')
+        #SP = 256
+        self.vm_code.append('@256')
+        self.vm_code.append('D=A')
         self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')
-        self.vm_code.append('D=M')
-        self.vm_code.append('@4')
         self.vm_code.append('M=D')
-        #THIS = *(SP - 2)
-        self._add_asm_comment('THIS = *(SP - 2)')
-        self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')
-        self.vm_code.append('D=M')
-        self.vm_code.append('@3')
-        self.vm_code.append('M=D')
-        #ARG = *(SP - 3)
-        self._add_asm_comment('ARG = *(SP - 3)')
-        self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')
-        self.vm_code.append('D=M')
-        self.vm_code.append('@2')
-        self.vm_code.append('M=D')
-        #LCL = *(SP - 4)
-        self._add_asm_comment('LCL = *(SP - 4)')
-        self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
-        self.vm_code.append('A=M')
+        #LCL = -1
+        self.vm_code.append('@R13')
+        self.vm_code.append('M=-1')
         self.vm_code.append('D=M')
         self.vm_code.append('@1')
         self.vm_code.append('M=D')
-        #SP--
-        self._add_asm_comment('SP--')
-        self.vm_code.append('@0')
-        self.vm_code.append('M=M-1')
+        #ARG = -2
+        self.vm_code.append('D=D-1')
+        self.vm_code.append('@2')
+        self.vm_code.append('M=D')
+        #THIS = -3
+        self.vm_code.append('D=D-1')
+        self.vm_code.append('@3')
+        self.vm_code.append('M=D')
+        #THAT = -4
+        self.vm_code.append('D=D-1')
+        self.vm_code.append('@4')
+        self.vm_code.append('M=D')
 
 if __name__ == "__main__":
-    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
+    #path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
+    path = os.path.join('..', 'FunctionCalls', 'NestedCall')
     #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)
