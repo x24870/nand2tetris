@@ -1,5 +1,6 @@
 import os
 from vmParser import Parser
+from vmParser import FILE_NAME_TAG
 
 RAM_ADDR_DEFINE = {
     'local': '1',
@@ -14,6 +15,8 @@ class CodeWriter():
         self.if_count = 0
         self.label_table = {}
         self._asm_ignored_line_count = 0
+        self._current_file = ''
+        self._func_be_called = {}#{func: count}
 
     def gen_hack_code(self, lines, gen_init_code):
         if gen_init_code:
@@ -42,6 +45,9 @@ class CodeWriter():
             elif line[0] == 'return':
                 #return
                 self._return_code(line)
+            elif line[0].startswith(FILE_NAME_TAG):
+                self._current_file = line[0].split(FILE_NAME_TAG)[1]
+                print("Processing file: {}".format(self._current_file))
             else:
                 print('Error: unspecified VM code "{}"'.format(' '.join(line)))
 
@@ -95,7 +101,7 @@ class CodeWriter():
             self.vm_code.append('D=M-D')
             #if x == 0 jump to (IF) else jump to (ELSE)
             #then both of these two result will jump to (ENDIF)
-            self.vm_code.append('@IF' + str(self.if_count))
+            self.vm_code.append('@IF' + str(self.if_count))#modify: use xxx.foo$bar
             if line == 'eq':
                 self.vm_code.append('D;JEQ')
             elif line == 'gt':
@@ -105,7 +111,7 @@ class CodeWriter():
             self.vm_code.append('@ELSE' + str(self.if_count))
             self.vm_code.append('0;JMP')
             #IF
-            self.vm_code.append('(IF' + str(self.if_count) + ')')
+            self.vm_code.append('(IF' + str(self.if_count) + ')')#modify: Use _label_code
             self.vm_code.append('@0')
             self.vm_code.append('A=M-1')#pop 2 times
             self.vm_code.append('A=A-1')
@@ -113,7 +119,7 @@ class CodeWriter():
             self.vm_code.append('@ENDIF' + str(self.if_count))
             self.vm_code.append('0;JMP')
             #ELSE
-            self.vm_code.append('(ELSE' + str(self.if_count) + ')')
+            self.vm_code.append('(ELSE' + str(self.if_count) + ')')#modify: Use _label_code
             self.vm_code.append('@0')
             self.vm_code.append('A=M-1')#pop 2 times
             self.vm_code.append('A=A-1')
@@ -515,7 +521,7 @@ class CodeWriter():
         self.vm_code.append('M=M-1')
 
 if __name__ == "__main__":
-    path = os.path.join('..', 'FunctionCalls', 'NestedCall')
+    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
     #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)

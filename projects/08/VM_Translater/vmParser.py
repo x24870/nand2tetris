@@ -1,5 +1,7 @@
 import os
 
+FILE_NAME_TAG = '$$$FILE_NAME:'
+
 class Parser():
     def __init__(self):
         self.lines = []
@@ -10,6 +12,7 @@ class Parser():
             self.is_dir = True
             for f in os.listdir(dir):
                 if f.endswith('.vm'):
+                    self.lines.append('{}{}'.format(FILE_NAME_TAG, f.split('.vm')[0]))
                     self._read_file(os.path.join(dir, f))
         elif os.path.isfile(dir):
             self._read_file(dir)
