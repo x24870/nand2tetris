@@ -111,7 +111,7 @@ class CodeWriter():
             self.vm_code.append('@ELSE' + str(self.if_count))
             self.vm_code.append('0;JMP')
             #IF
-            self.vm_code.append('(IF' + str(self.if_count) + ')')#modify: Use _label_code
+            self._label_code('label IF{}'.format(str(self.if_count)).split())
             self.vm_code.append('@0')
             self.vm_code.append('A=M-1')#pop 2 times
             self.vm_code.append('A=A-1')
@@ -119,7 +119,7 @@ class CodeWriter():
             self.vm_code.append('@ENDIF' + str(self.if_count))
             self.vm_code.append('0;JMP')
             #ELSE
-            self.vm_code.append('(ELSE' + str(self.if_count) + ')')#modify: Use _label_code
+            self._label_code('label ELSE{}'.format(str(self.if_count)).split())
             self.vm_code.append('@0')
             self.vm_code.append('A=M-1')#pop 2 times
             self.vm_code.append('A=A-1')
@@ -127,7 +127,7 @@ class CodeWriter():
             self.vm_code.append('@ENDIF' + str(self.if_count))
             self.vm_code.append('0;JMP')
             #ENDIF SP--
-            self.vm_code.append('(ENDIF' + str(self.if_count) + ')')
+            self._label_code('label ENDIF{}'.format(str(self.if_count)).split())
             self.vm_code.append('@0')
             self.vm_code.append('M=M-1')
             self.if_count += 1
