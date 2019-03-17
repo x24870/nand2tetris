@@ -13,7 +13,6 @@ class CodeWriter():
     def __init__(self):
         self.vm_code = []
         self.if_count = 0
-        self.label_table = {}
         self._asm_ignored_line_count = 0
         self._current_file = ''
         self._func_be_called = {}#{func: count}
@@ -324,8 +323,7 @@ class CodeWriter():
     def _function_code(self, line):
         self._add_asm_comment(' '.join(line))
         #(function.label)
-        self.vm_code.append('(' + line[1] + ')')
-        self._asm_ignored_line_count += 1
+        self._label_code('label {}'.format(line[1]).split())
         #Initialize local varialble to 0
         self._add_asm_comment('Initialize local varialble to 0')
         for i in range(int(line[2])):
@@ -510,8 +508,7 @@ class CodeWriter():
         self.vm_code.append('M=D')
 
 if __name__ == "__main__":
-    #path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
-    path = os.path.join('..', 'FunctionCalls', 'NestedCall')
+    path = os.path.join('..', 'FunctionCalls', 'FibonacciElement')
     #path = os.path.join('..', 'FunctionCalls', 'SimpleFunction', 'SimpleFunction.vm')
     parser_ = Parser()
     parser_.read(path)
