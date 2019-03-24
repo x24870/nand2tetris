@@ -1,0 +1,78 @@
+class Penis {
+
+   field int x;
+   field int memAddress;
+
+    constructor Penis new(int Ax) {
+        let x = 7648 + Ax;
+        do draw(x);
+        return this;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method  void draw(int location) {
+        let memAddress = 16384+location;
+        do Memory.poke(memAddress+0, 448);
+        do Memory.poke(memAddress+32, 672);
+        do Memory.poke(memAddress+64, 1168);
+        do Memory.poke(memAddress+96, 1040);
+        do Memory.poke(memAddress+128, 544);
+        do Memory.poke(memAddress+160, 1040);
+        do Memory.poke(memAddress+192, 1040);
+        do Memory.poke(memAddress+224, 1040);
+        do Memory.poke(memAddress+256, 1040);
+        do Memory.poke(memAddress+288, 1040);
+        do Memory.poke(memAddress+320, 1040);
+        do Memory.poke(memAddress+352, 7196);
+        do Memory.poke(memAddress+384, 8194);
+        do Memory.poke(memAddress+416, 16385);
+        do Memory.poke(memAddress+448, 16929);
+        do Memory.poke(memAddress+480, 15934);
+        return;
+    }
+
+    method  void Erase(int location) {
+        let memAddress = 16384+location;
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 0);
+        do Memory.poke(memAddress+96, 0);
+        do Memory.poke(memAddress+128, 0);
+        do Memory.poke(memAddress+160, 0);
+        do Memory.poke(memAddress+192, 0);
+        do Memory.poke(memAddress+224, 0);
+        do Memory.poke(memAddress+256, 0);
+        do Memory.poke(memAddress+288, 0);
+        do Memory.poke(memAddress+320, 0);
+        do Memory.poke(memAddress+352, 0);
+        do Memory.poke(memAddress+384, 0);
+        do Memory.poke(memAddress+416, 0);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+
+    method void moveLeft() {
+        if (x > 7648) {
+            do Screen.setColor(false);
+            do Erase(x);
+            let x = x - 1;
+            do draw(x);
+        }
+        return;
+    }
+
+    method void moveRight() {
+        if (x < 7679) {
+            do Screen.setColor(false);
+            do Erase(x);
+            let x = x + 1;
+            do draw(x);
+        }
+        return;
+    }
+}
