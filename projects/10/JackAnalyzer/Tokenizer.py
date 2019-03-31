@@ -53,41 +53,42 @@ class Tokenizer():
         while self.stream_idx < len(self.code_stream):
             cur_char = self.code_stream[self.stream_idx]
             #Current string is in the double quote
-            if self.str_flag:
-                if cur_char != '"':
-                    self.cur_token += cur_char
-                    self.stream_idx += 1
-                    continue
-                else:
-                    self.stream_idx -= 1
-                    break
+            if cur_char == '"':
+                self.cur_token, str_len = self._process_str_const(self.stream_idx)
+                self.stream_idx += str_len + 2
+                break
 
             #Current string is keyword or variable
             if cur_char not in _symbol and cur_char != ' ':
                 self.cur_token += cur_char
-                self.stream_idx += 1
-                continue
+                #check if this string is end
+                next_char = self.code_stream[self.stream_idx + 1]
+                if next_char in _symbol or next_char == ' ' or next_char == '"':
+                    self.stream_idx += 1
+                    break
+                else:
+                    self.stream_idx += 1
+                    continue
             #Current string is symbol or space
             else:
-                if cur_char == '"':
-                    #if this double quote is start of string, str_flat = True
-                    #else str_flat = False
-                    self.str_flag = not self.str_flag
-                    
                 if cur_char != ' ':
-                    #if current char is symbol and previous char is not space
-                    #deal with current token first
-                    if self.cur_token:
-                        break
-                    else:
-                        self.cur_token = cur_char
-
+                    self.cur_token = cur_char
                 self.stream_idx += 1
                 break
         else:
             return False
         return True
                 
+    def _process_str_const(self, idx):
+        cur_idx = idx + 1 #skip first double quote
+        str_const = ''
+        self.str_flag = True
+        while self.code_stream[cur_idx] != '"':
+            str_const += self.code_stream[cur_idx]
+            cur_idx += 1
+        str_len = cur_idx - idx - 1
+        return str_const, str_len
+
     def advance(self):
         if not self.cur_token:
             return
@@ -99,6 +100,7 @@ class Tokenizer():
 
     def tokenType(self, token):
         if self.str_flag:
+            self.str_flag = False
             return 'stringConstant'
         elif token in _keyword:
             return 'keyword'
