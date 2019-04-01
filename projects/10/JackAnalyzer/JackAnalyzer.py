@@ -1,7 +1,9 @@
 import os, sys, subprocess
 import xml.etree.ElementTree as ET
-from Tokenizer import Tokenizer
 from xml.dom import minidom
+
+from Tokenizer import Tokenizer
+from CompilationEngine import CompilationEngine
 
 class JackAnalyzer():
     def __init__(self):
@@ -93,3 +95,6 @@ if __name__ == '__main__':
                 comp_des = os.path.join(sys.argv[1], f.split('.jack')[0] + 'T2.xml')
                 print("\n*** Comparing '{}', '{}' ...".format(comp_src, comp_des))
                 subprocess.call([compare_bat_path, comp_src, comp_des])
+
+    Etree = ET.ElementTree(file=os.path.join(sys.argv[1], f.split('.jack')[0]))#this path is dir
+    engine = CompilationEngine(Etree)
