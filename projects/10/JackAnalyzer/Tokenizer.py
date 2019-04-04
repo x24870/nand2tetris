@@ -27,11 +27,11 @@ _keyword = [
 _symbol = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '<', '>', '=', '~']
 
 _tokenType = [
-    'KEYWORD',
-    'SYMBOL',
-    'IDENTITIER',
-    'INT_CONST',
-    'STRING_CONST',
+    'keyword',
+    'symbol',
+    'identifier',
+    'integerConstant',
+    'stringConstant',
 ]
 
 class Tokenizer():
