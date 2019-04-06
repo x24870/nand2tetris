@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 
 from Tokenizer import _keyword, _symbol, _tokenType
 
+_op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
 class CompilationEngine():
     def __init__(self, Etree):
@@ -48,10 +49,9 @@ class CompilationEngine():
         #self._add_child(whileStatement)
         parent.append(ET.Element('whileStatement'))
         root = self._get_last_child(parent)
-
         self._eat('while', root)
         self._eat('(', root)
-        self.CompileExpression()
+        self.CompileExpression(root)
         self._eat(')', root)
         self._eat('{', root)
         self.CompileStatements()
@@ -64,11 +64,19 @@ class CompilationEngine():
     def CompileReturn(self):
         pass
 
-    def CompileExpression(self):
-        pass
+    def CompileExpression(self, parent):
+        parent.append(ET.Element('expression'))
+        root = self._get_last_child(parent)
+        self.CompileTerm(root)
 
-    def CompileTerm(self):
-        pass
+        if self._get_next_src_element().tag in _op:
+            self._eat(self._get_next_src_element().text, root)
+            self.CompileTerm(root)
+
+    def CompileTerm(self, parent):
+        parent.append(ET.Element('term'))
+        root = self._get_last_child(parent)
+        #TODO: deal with term
     
     def CompileExpressionList(self):
         pass
@@ -85,6 +93,9 @@ class CompilationEngine():
 
     def _get_cur_src_element(self):
         return self.e_lst[self.idx]
+
+    def _get_next_src_element(self):
+        return self.e_lst[self.idx + 1]
 
     def _get_last_child(self, e):
         return e.findall('*')[-1]
