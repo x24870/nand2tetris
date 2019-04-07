@@ -5,6 +5,8 @@ from Tokenizer import _keyword, _symbol, _tokenType
 
 _op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
+_statements_type = ['let', 'if', 'while', 'do', 'return']
+
 class CompilationEngine():
     def __init__(self, Etree):
         if type(Etree) != ET.ElementTree:
@@ -36,13 +38,36 @@ class CompilationEngine():
     def CompileVarDec(self):
         pass
 
-    def CompileStatements(self):
-        pass
+    def CompileStatements(self, parent):
+        root = self._get_last_child(parent)
+        while(True):
+            stateType = self._get_cur_src_element().text
+            if stateType == 'let':
+                self.CompileLet(root)
+            elif stateType == 'if':
+                self.CompileIf(root)
+            elif stateType == 'while':
+                self.CompileWhile(root)
+            elif stateType == 'do':
+                self.CompileDo(root)
+            elif stateType == 'return':
+                self.CompileReturn(root)
+            else:
+                print("[CompileStatements error] invalid state type: {}".format(stateType))
+                exit()
 
-    def CompileLet(self):
-        pass
+            if stateType = self._get_cur_src_element().text not in _statements_type:
+                break
 
-    def CompileIf(self):
+    def CompileLet(self, parent):
+        root = self._get_last_child(parent)
+        self._eat('let', root)
+        self.CompileVarName()
+        self._eat('=', root)
+        self.CompileExpression(self, root)
+        self._eat(';', root)
+
+    def CompileIf(self, parent):
         pass
 
     def CompileWhile(self, parent):
@@ -58,10 +83,10 @@ class CompilationEngine():
         self._eat('}', root)
 
 
-    def CompileDo(self):
+    def CompileDo(self, parent):
         pass
 
-    def CompileReturn(self):
+    def CompileReturn(self, parent):
         pass
 
     def CompileExpression(self, parent):
@@ -79,6 +104,10 @@ class CompilationEngine():
         #TODO: deal with term
     
     def CompileExpressionList(self):
+        pass
+
+    def CompileVarName(self, parent):
+        #TODO: ('['expression']')?
         pass
 
     def _eat(self, text, root):
