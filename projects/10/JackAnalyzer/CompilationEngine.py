@@ -62,7 +62,7 @@ class CompilationEngine():
     def CompileLet(self, parent):
         root = self._get_last_child(parent)
         self._eat('let', root)
-        self.CompileVarName()
+        self.CompileTerm(root)
         self._eat('=', root)
         self.CompileExpression(self, root)
         self._eat(';', root)
@@ -102,12 +102,9 @@ class CompilationEngine():
         parent.append(ET.Element('term'))
         root = self._get_last_child(parent)
         #TODO: deal with term
+        #TODO: varName('['expression']')?
     
     def CompileExpressionList(self):
-        pass
-
-    def CompileVarName(self, parent):
-        #TODO: ('['expression']')?
         pass
 
     def _eat(self, text, root):
