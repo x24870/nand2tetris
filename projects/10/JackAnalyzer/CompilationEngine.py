@@ -7,13 +7,15 @@ _op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
 _statements_type = ['let', 'if', 'while', 'do', 'return']
 
+_keyword_constant = ['true', 'false', 'null', 'this']
+
 class CompilationEngine():
     def __init__(self, Etree):
         if type(Etree) != ET.ElementTree:
             raise TypeError('Please construct with an ElementTree object')
         self.srcTree = Etree
         self.e_lst = list(Etree.getroot().iter())
-        self.idx = 1 #skip <token>
+        self.idx = 1 #start from 1 for skip <token>
 
         self.desRoot = ET.Element('')
         self.desTree = ET.ElementTree(self.desRoot)
@@ -39,6 +41,7 @@ class CompilationEngine():
         pass
 
     def CompileStatements(self, parent):
+        parent.append(ET.Element('statements'))
         root = self._get_last_child(parent)
         while(True):
             stateType = self._get_cur_src_element().text
@@ -56,15 +59,16 @@ class CompilationEngine():
                 print("[CompileStatements error] invalid state type: {}".format(stateType))
                 exit()
 
-            if stateType = self._get_cur_src_element().text not in _statements_type:
+            if self._get_cur_src_element().text not in _statements_type:
                 break
 
     def CompileLet(self, parent):
+        parent.append(ET.Element('LetStatement'))
         root = self._get_last_child(parent)
         self._eat('let', root)
         self.CompileTerm(root)
         self._eat('=', root)
-        self.CompileExpression(self, root)
+        self.CompileExpression(root)
         self._eat(';', root)
 
     def CompileIf(self, parent):
@@ -79,7 +83,7 @@ class CompilationEngine():
         self.CompileExpression(root)
         self._eat(')', root)
         self._eat('{', root)
-        self.CompileStatements()
+        self.CompileStatements(root)
         self._eat('}', root)
 
 
@@ -101,8 +105,36 @@ class CompilationEngine():
     def CompileTerm(self, parent):
         parent.append(ET.Element('term'))
         root = self._get_last_child(parent)
-        #TODO: deal with term
-        #TODO: varName('['expression']')?
+        e = self._get_cur_src_element()
+        if e.tag == 'integerConstant':
+            self._eat('CONST' ,root)
+        elif e.tag == 'stringConstant':
+            self._eat('CONST' ,root)
+        elif e.tag == 'identifier':
+            if e.text in _keyword_constant:
+                self._eat(e.text, root)
+            else:
+                #varName: foo, foo[expression], foo.bar(...), Foo.bar(...), bar(...) 
+                #look forward to next token
+                if self._get_next_src_element().text == '[':
+                    self._eat('CONST', root)
+                    self._eat('[', root)
+                    self.CompileExpression(root)
+                    self._eat(']', root)
+                elif self._get_next_src_element().text == '.':
+                    self._eat('CONST', root)
+                    self._eat('.', root)
+                    self.CompileTerm(root)
+                    self._eat('(')
+                    self.CompileExpressionList(root)
+                    self._eat(')')
+                elif self._get_next_src_element().text == '(':
+                    self._eat('CONST', root)
+                    self._eat('(', root)
+                    self.CompileExpressionList(root)
+                    self._eat(')', root)
+                else:
+                    self._eat('CONST', root)
     
     def CompileExpressionList(self):
         pass
@@ -111,11 +143,16 @@ class CompilationEngine():
         #check if current element is comply the grammer
         #the append this element to current root
         e = self._get_cur_src_element()
-        if e.text != text:
-            print('Error: At line: {}, expect text: {}'.format(self.idx+1, text))
-        else:
+
+        if text == 'CONST':
             root.append(e)
             self.idx += 1 #advance
+        else:
+            if e.text != text:
+                print('Error: At line: {}, expect text: {}'.format(self.idx+1, text))
+            else:
+                root.append(e)
+                self.idx += 1 #advance
 
     def _get_cur_src_element(self):
         return self.e_lst[self.idx]
@@ -124,6 +161,7 @@ class CompilationEngine():
         return self.e_lst[self.idx + 1]
 
     def _get_last_child(self, e):
+        #print("-- " , e.tag, e.text, e.findall('*'))
         return e.findall('*')[-1]
 
     def _get_parnet(self):
