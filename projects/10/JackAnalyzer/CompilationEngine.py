@@ -72,7 +72,20 @@ class CompilationEngine():
         self._eat(';', root)
 
     def CompileIf(self, parent):
-        pass
+        parent.append(ET.Element('IfStatement'))
+        root = self._get_last_child(parent)
+        self._eat('if', root)
+        self._eat('(', root)
+        self.CompileExpression(root)
+        self._eat(')', root)
+        self._eat('{', root)
+        self.CompileStatements(root)
+        self._eat('}', root)
+
+        if self._get_next_src_element().text == 'else':
+            self._eat('(', root)
+            self.CompileStatements(root)
+            self._eat(')', root)
 
     def CompileWhile(self, parent):
         #self._add_child(whileStatement)
@@ -137,7 +150,12 @@ class CompilationEngine():
                     self._eat('CONST', root)
     
     def CompileExpressionList(self):
-        pass
+        parent.append(ET.Element('expressionList'))
+        root = self._get_last_child(parent)
+        self.CompileExpression(root)
+
+        while self._get_next_src_element().text == ',':
+            self.CompileExpression(root)
 
     def _eat(self, text, root):
         #check if current element is comply the grammer
