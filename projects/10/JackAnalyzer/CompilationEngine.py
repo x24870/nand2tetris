@@ -22,8 +22,24 @@ class CompilationEngine():
         self.cur_root = self.desRoot
 
 
-    def CompileClass(self):
-        pass
+    def CompileClass(self, parent):
+        parent.append(ET.Element('class'))
+        root = self._get_last_child(parent)
+        self._eat('class', root)
+        self._eat('CONST', root)
+        self._eat('{', root)
+        parent.append(ET.Element('subroutineDec'))
+        root = self._get_last_child(root)
+        #compile subroutineDec
+        parent.append(ET.Element('subroutineBody'))
+        root = self._get_last_child(root)
+        #compile subroutineBody
+
+        #TODO:go back to parent function
+        #if there is more subroutine
+        #go back to parent
+
+
 
     def CompileClassVarDec(self):
         pass
@@ -104,7 +120,14 @@ class CompilationEngine():
         pass
 
     def CompileReturn(self, parent):
-        pass
+        parent.append(ET.Element('returnStatement'))
+        root = self._get_last_child(parent)
+        self._eat('retrun', root)
+        
+        if self._get_next_src_element().text != ';':
+            self.CompileExpression(root)
+
+        self._eat(';', root)
 
     def CompileExpression(self, parent):
         parent.append(ET.Element('expression'))
