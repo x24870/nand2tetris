@@ -188,24 +188,14 @@ class CompilationEngine():
             self._eat('CONST', root)
         elif e.text in ['true', 'false', 'null', 'this']:
             self._eat('CONST', root)
-        elif e.tag == 'identifier':
+        elif e.tag == 'identifier' and self._get_next_src_element().text != '(':
             #varName | varName['expression']
             self._eat('CONST', root)
             if self._get_cur_src_element() == '[':
-                self._eat('.', root)
                 self._eat('[', root)
                 self.CompileExpression(root)
                 self._eat('[', root)
-            elif self._get_cur_src_element() == '.':
-                self._eat('.', root)
-                self._eat('(', root)
-                self.CompileExpressionList(root)
-                self._eat(')', root)
-            elif self._get_cur_src_element() == '(':
-                self._eat('(', root)
-                self.CompileExpressionList(root)
-                self._eat(')', root)
-        elif 0:
+        elif e.tag == 'identifier':
             #subroutineCall
             self._eat('CONST', root)#subroutineName
             if self._get_cur_src_element().text == '(':
