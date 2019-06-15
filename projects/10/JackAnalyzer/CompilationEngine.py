@@ -26,35 +26,65 @@ class CompilationEngine():
         parent.append(ET.Element('class'))
         root = self._get_last_child(parent)
         self._eat('class', root)
-        self._eat('CONST', root)
+        self._eat('CONST', root)#class name
         self._eat('{', root)
+        if self._get_next_src_element().text in ['static', 'field']:
+            self.CompileClassVarDec(root)
+        if self._get_next_src_element().text in ['constructor', 'function', 'method']:
+            self.CompileSubroutineDec(root)
+        self._eat('}', root)
+
+    def CompileClassVarDec(self, parent):
+        parent.append(ET.Element('classVarDec'))
+        root = self._get_last_child(parent)
+        self._eat('CONST', root)#type
+        self._eat('CONST', root)#varName
+        while self._get_next_src_element().text == ',':
+            self._eat(',', root)
+            self._eat('CONST', root)#type
+            self._eat('CONST', root)#varName
+        self._eat(';', root)
+
+    def CompileSubroutineDec(self, parent):
         parent.append(ET.Element('subroutineDec'))
-        root = self._get_last_child(root)
-        #compile subroutineDec
+        root = self._get_last_child(parent)
+        self._eat('CONST', root)#('constructor' | 'function' | 'method')
+        self._eat('CONST', root)#('void" | type)
+        self._eat('CONST', root)#subroutineName
+        self._eat('(', root)
+        self.CompileParameterList(root)
+        self._eat(')', root)
+        self.CompileSubroutineBody(root)
+
+    def CompileParameterList(self, parent):
+        parent.append(ET.Element('parameterList'))
+        root = self._get_last_child(parent)
+        while self._get_next_src_element().tag == 'keyword':
+            self._eat('CONST', root)#type
+            self._eat('CONSt', root)#varName
+            if self._get_next_src_element().text == ',':
+                self._eat(',', root)
+
+    def CompileSubroutineBody(self, parent):
         parent.append(ET.Element('subroutineBody'))
-        root = self._get_last_child(root)
-        #compile subroutineBody
+        root = self._get_last_child(parent)
+        self._eat('{', root)
+        if self._get_next_src_element().text == 'var':
+            self.CompileVarDec(root)
+        self.CompileStatements(root)
+        self._eat('}', root)
 
-        #TODO:go back to parent function
-        #if there is more subroutine
-        #go back to parent
-
-
-
-    def CompileClassVarDec(self):
-        pass
-
-    def CompileSubroutineDec(self):
-        pass
-
-    def CompileParameterList(self):
-        pass
-
-    def CompileSubroutineBody(self):
-        pass
-
-    def CompileVarDec(self):
-        pass
+    def CompileVarDec(self, parent):
+        parent.append(ET.Element('varDec'))
+        root = self._get_last_child(parent)
+        self._eat('var', root)
+        self._eat('CONST', root)#type
+        self._eat('CONST', root)#varName
+        while self._get_next_src_element().text == ',':
+            self._eat(',', root)
+            self._eat('CONST', root)#type
+            self._eat('CONST', root)#varName
+        self._eat(';', root)
 
     def CompileStatements(self, parent):
         parent.append(ET.Element('statements'))
@@ -104,7 +134,6 @@ class CompilationEngine():
             self._eat(')', root)
 
     def CompileWhile(self, parent):
-        #self._add_child(whileStatement)
         parent.append(ET.Element('whileStatement'))
         root = self._get_last_child(parent)
         self._eat('while', root)
@@ -117,24 +146,37 @@ class CompilationEngine():
 
 
     def CompileDo(self, parent):
-        pass
+        parent.append(ET.Element('doStatement'))
+        root = self._get_last_child(parent)
+        self._eat('do', root)
+
+        #subroutineCall
+        self._eat('CONST', root)#subroutineName
+        if self._get_cur_src_element().text == '(':
+            self._eat('(', root)
+            self.CompileExpression(root)
+            self._eat(')', root)
+        elif self._get_cur_src_element().text == '.':
+            self._eat('.', root)
+            self._eat('[', root)
+            self._eat('CONST', root)#subroutineName
+            self._eat(']', root)
+
+        self._eat(';', root)
 
     def CompileReturn(self, parent):
         parent.append(ET.Element('returnStatement'))
         root = self._get_last_child(parent)
         self._eat('retrun', root)
-        
         if self._get_next_src_element().text != ';':
             self.CompileExpression(root)
-
         self._eat(';', root)
 
     def CompileExpression(self, parent):
         parent.append(ET.Element('expression'))
         root = self._get_last_child(parent)
         self.CompileTerm(root)
-
-        if self._get_next_src_element().tag in _op:
+        while self._get_next_src_element().text in _op:
             self._eat(self._get_next_src_element().text, root)
             self.CompileTerm(root)
 
@@ -142,37 +184,50 @@ class CompilationEngine():
         parent.append(ET.Element('term'))
         root = self._get_last_child(parent)
         e = self._get_cur_src_element()
-        if e.tag == 'integerConstant':
-            self._eat('CONST' ,root)
-        elif e.tag == 'stringConstant':
-            self._eat('CONST' ,root)
+        if e.tag in ['integerConstant', 'stringConstant']:
+            self._eat('CONST', root)
+        elif e.text in ['true', 'false', 'null', 'this']:
+            self._eat('CONST', root)
         elif e.tag == 'identifier':
-            if e.text in _keyword_constant:
-                self._eat(e.text, root)
-            else:
-                #varName: foo, foo[expression], foo.bar(...), Foo.bar(...), bar(...) 
-                #look forward to next token
-                if self._get_next_src_element().text == '[':
-                    self._eat('CONST', root)
-                    self._eat('[', root)
-                    self.CompileExpression(root)
-                    self._eat(']', root)
-                elif self._get_next_src_element().text == '.':
-                    self._eat('CONST', root)
-                    self._eat('.', root)
-                    self.CompileTerm(root)
-                    self._eat('(')
-                    self.CompileExpressionList(root)
-                    self._eat(')')
-                elif self._get_next_src_element().text == '(':
-                    self._eat('CONST', root)
-                    self._eat('(', root)
-                    self.CompileExpressionList(root)
-                    self._eat(')', root)
-                else:
-                    self._eat('CONST', root)
+            #varName | varName['expression']
+            self._eat('CONST', root)
+            if self._get_cur_src_element() == '[':
+                self._eat('.', root)
+                self._eat('[', root)
+                self.CompileExpression(root)
+                self._eat('[', root)
+            elif self._get_cur_src_element() == '.':
+                self._eat('.', root)
+                self._eat('(', root)
+                self.CompileExpressionList(root)
+                self._eat(')', root)
+            elif self._get_cur_src_element() == '(':
+                self._eat('(', root)
+                self.CompileExpressionList(root)
+                self._eat(')', root)
+        elif 0:
+            #subroutineCall
+            self._eat('CONST', root)#subroutineName
+            if self._get_cur_src_element().text == '(':
+                self._eat('(', root)
+                self.CompileExpression(root)
+                self._eat(')', root)
+            elif self._get_cur_src_element().text == '.':
+                self._eat('.', root)
+                self._eat('[', root)
+                self._eat('CONST', root)#subroutineName
+                self._eat(']', root)
+        elif e.text == '(':
+            self._eat('(', root)
+            self.CompileExpression(root)
+            self._eat(')', root)
+        elif e.text in _op:
+            self._eat('CONST', root)#unaryOp
+            self.CompileTerm(root)
+        else:
+            print('Error: not comply compile term rule, index: {}'.format(self.idx))
     
-    def CompileExpressionList(self):
+    def CompileExpressionList(self, parent):
         parent.append(ET.Element('expressionList'))
         root = self._get_last_child(parent)
         self.CompileExpression(root)
@@ -184,7 +239,6 @@ class CompilationEngine():
         #check if current element is comply the grammer
         #the append this element to current root
         e = self._get_cur_src_element()
-
         if text == 'CONST':
             root.append(e)
             self.idx += 1 #advance
