@@ -48,7 +48,6 @@ class CompilationEngine():
         self._eat('CONST', root)#varName
         while self._get_next_src_element().text == ',':
             self._eat(',', root)
-            self._eat('CONST', root)#type
             self._eat('CONST', root)#varName
         self._eat(';', root)
 
@@ -93,7 +92,6 @@ class CompilationEngine():
         self._eat('CONST', root)#varName
         while self._get_cur_src_element().text == ',':
             self._eat(',', root)
-            self._eat('CONST', root)#type
             self._eat('CONST', root)#varName
         self._eat(';', root)
 
@@ -170,17 +168,7 @@ class CompilationEngine():
         root = self._get_last_child(parent)
         self._eat('do', root)
 
-        #subroutineCall
-        self._eat('CONST', root)#subroutineName
-        if self._get_cur_src_element().text == '(':
-            self._eat('(', root)
-            self.CompileExpression(root)
-            self._eat(')', root)
-        elif self._get_cur_src_element().text == '.':
-            self._eat('.', root)
-            self._eat('[', root)
-            self._eat('CONST', root)#subroutineName
-            self._eat(']', root)
+        self._compileSubroutineCall(root)
 
         self._eat(';', root)
 
@@ -198,8 +186,8 @@ class CompilationEngine():
         parent.append(ET.Element('expression'))
         root = self._get_last_child(parent)
         self.CompileTerm(root)
-        while self._get_next_src_element().text in _op:
-            self._eat(self._get_next_src_element().text, root)
+        while self._get_cur_src_element().text in _op:
+            self._eat(self._get_cur_src_element().text, root)
             self.CompileTerm(root)
 
     @func_msg
@@ -213,23 +201,14 @@ class CompilationEngine():
             self._eat('CONST', root)
         elif e.tag == 'identifier' and self._get_next_src_element().text != '.':
             #varName | varName['expression']
+            print("***varName***")
             self._eat('CONST', root)
-            if self._get_cur_src_element() == '[':
+            if self._get_cur_src_element().text == '[':
                 self._eat('[', root)
                 self.CompileExpression(root)
-                self._eat('[', root)
-        elif e.tag == 'identifier':
-            #subroutineCall
-            self._eat('CONST', root)#subroutineName
-            if self._get_cur_src_element().text == '(':
-                self._eat('(', root)
-                self.CompileExpression(root)
-                self._eat(')', root)
-            elif self._get_cur_src_element().text == '.':
-                self._eat('.', root)
-                self._eat('[', root)
-                self._eat('CONST', root)#subroutineName
                 self._eat(']', root)
+        elif e.tag == 'identifier':
+            self._compileSubroutineCall(root)
         elif e.text == '(':
             self._eat('(', root)
             self.CompileExpression(root)
@@ -240,6 +219,7 @@ class CompilationEngine():
         else:
             print('CompileTerm Error: not comply compile term rule, index: {}, tag: {}, text'
             .format(self.idx, e.tag, e.text))
+            exit()
     
     @func_msg
     def CompileExpressionList(self, parent):
@@ -250,6 +230,22 @@ class CompilationEngine():
         while self._get_next_src_element().text == ',':
             self.CompileExpression(root)
 
+    #This function is not defined in lecture API, but I think implement this function is better solution
+    def _compileSubroutineCall(self, parent):
+            print("***subroutineCall***")
+            self._eat('CONST', parent)#subroutineName
+            if self._get_cur_src_element().text == '(':
+                self._eat('(', parent)
+                self.CompileExpressionList(parent)
+                self._eat(')', parent)
+            elif self._get_cur_src_element().text == '.':
+                print("** DOT **")
+                self._eat('.', parent)
+                self._eat('CONST', parent)#subroutineName
+                self._eat('(', parent)
+                self.CompileExpressionList(parent)
+                self._eat(')', parent)
+
     def _eat(self, text, root):
         #check if current element is comply the grammer
         #the append this element to current root
@@ -259,7 +255,8 @@ class CompilationEngine():
             self.idx += 1 #advance
         else:
             if e.text != text:
-                print('Error: At line: {}, expect text: {}'.format(self.idx+1, text))
+                print('_eat Error at line: {}, expect text: {}, src text: {}'.format(self.idx+1, text, self._get_cur_src_element().text) )
+                exit()
             else:
                 root.append(e)
                 self.idx += 1 #advance
