@@ -1,5 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
 from Tokenizer import _keyword, _symbol, _tokenType
 
@@ -120,7 +121,7 @@ class CompilationEngine():
 
     @func_msg
     def CompileLet(self, parent):
-        parent.append(ET.Element('LetStatement'))
+        parent.append(ET.Element('letStatement'))
         root = self._get_last_child(parent)
         self._eat('let', root)
         self._eat('CONST', root)#varName
@@ -176,8 +177,8 @@ class CompilationEngine():
     def CompileReturn(self, parent):
         parent.append(ET.Element('returnStatement'))
         root = self._get_last_child(parent)
-        self._eat('retrun', root)
-        if self._get_next_src_element().text != ';':
+        self._eat('return', root)
+        if self._get_cur_src_element().text != ';':
             self.CompileExpression(root)
         self._eat(';', root)
 
@@ -217,15 +218,18 @@ class CompilationEngine():
             self._eat('CONST', root)#unaryOp
             self.CompileTerm(root)
         else:
-            print('CompileTerm Error: not comply compile term rule, index: {}, tag: {}, text'
-            .format(self.idx, e.tag, e.text))
-            exit()
+            #print('CompileTerm Error: not comply compile term rule, index: {}, tag: {}, text'
+            #.format(self.idx, e.tag, e.text))
+            #exit()
+            return
     
     @func_msg
     def CompileExpressionList(self, parent):
         parent.append(ET.Element('expressionList'))
         root = self._get_last_child(parent)
-        self.CompileExpression(root)
+        #print("******" + self._get_cur_src_element().text )
+        if self._get_cur_src_element().text != ')':
+            self.CompileExpression(root)
 
         while self._get_next_src_element().text == ',':
             self.CompileExpression(root)
@@ -275,13 +279,54 @@ class CompilationEngine():
     def _get_parnet(self):
         pass
 
+def pretty_format_xml(file_path, tree):
+    srcPath = os.path.dirname(file_path)
+    srcName = os.path.basename(file_path)
+
+    #skip first empty token
+    xmlstr = minidom.parseString(ET.tostring( tree.getroot(), short_empty_elements=False )).toprettyxml(indent='')
+    #remove xml version
+    first_nl = xmlstr.find('\n')
+    xmlstr = xmlstr[first_nl+1:]
+
+    des = os.path.join(srcPath, srcName.replace('_Gen.xml', '_Pretty.xml'))
+    with open(des, 'w') as f:
+        for line in xmlstr:
+            f.write(line)
+
+    #clear emptyline
+    lines = []
+    with open(des, 'r') as f:
+        for line in f.readlines():
+            if line.startswith('<'):
+                lines.append(line)
+
+    with open(des, 'w') as f:
+        for line in lines:
+            f.write(line)
+
+    #convert self-close token to start/end tocken
+    lines = []
+    with open(des, 'r') as f:
+        for line in f.readlines():
+            if line.endswith('/>\n'):
+                tag = line[1:-3]
+                line = '<{}>\n</{}>\n'.format(tag, tag)
+            lines.append(line)
+
+    with open(des, 'w', encoding='utf8') as f:
+        for line in lines:
+            f.write(line)
 
 if __name__ == '__main__':
     path = os.path.join('..', 'ArrayTest')
-    srcName = 'MainT2.xml'
+    srcName = 'Main_Token.xml'
     tree = ET.ElementTree(file=os.path.join(path, srcName))
     engine = CompilationEngine(tree)
     engine.CompileClass(engine.desRoot)
 
-    desName = srcName.split('T2.xml')[0] + 'T3.xml'
-    engine.desTree.write(os.path.join(path, desName))
+    desName = srcName.split('_Token.xml')[0] + '_Gen.xml'
+    engine.desTree._setroot(engine.desTree.getroot()[0])#skip first empty token
+    engine.desTree.write(os.path.join(path, desName), short_empty_elements=False)
+
+    pretty_format_xml(os.path.join(path, desName), engine.desTree)

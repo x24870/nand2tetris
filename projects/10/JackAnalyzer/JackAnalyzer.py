@@ -37,7 +37,7 @@ class JackAnalyzer():
             Etree = tknzr.process_code() #retrun a ElementTree
             
             current_dir = os.path.dirname(path)
-            filename = os.path.basename(path).split('.jack')[0] + 'T2.xml'
+            filename = os.path.basename(path).split('.jack')[0] + '_Token.xml'
             self._write_to_file(os.path.join(current_dir, filename), Etree)
 
     def _remove_comment_and_space(self, line, block_comment):
@@ -85,16 +85,16 @@ if __name__ == '__main__':
     compare_bat_path = os.path.join('..', '..', 'tools', 'TextComparer.bat')
     if os.path.isfile(sys.argv[1]):
         comp_src = sys.argv[1].split('.jack')[0] + 'T.xml'
-        comp_des = sys.argv[1].split('.jack')[0] + 'T2.xml'
+        comp_des = sys.argv[1].split('.jack')[0] + '_Token.xml'
         print("\n*** Comparing '{}', '{}' ...".format(comp_src, comp_des))
-        subprocess.call([compare_bat_path, comp_src, comp_des])
+        #subprocess.call([compare_bat_path, comp_src, comp_des])
     elif os.path.isdir(sys.argv[1]):
         for f in os.listdir(sys.argv[1]):
             if f.endswith('.jack'):
                 comp_src = os.path.join(sys.argv[1], f.split('.jack')[0] + 'T.xml')
-                comp_des = os.path.join(sys.argv[1], f.split('.jack')[0] + 'T2.xml')
+                comp_des = os.path.join(sys.argv[1], f.split('.jack')[0] + '_Token.xml')
                 print("\n*** Comparing '{}', '{}' ...".format(comp_src, comp_des))
-                subprocess.call([compare_bat_path, comp_src, comp_des])
+                #subprocess.call([compare_bat_path, comp_src, comp_des])
 
     Etree = ET.ElementTree(file=os.path.join(sys.argv[1], f.split('.jack')[0]))#this path is dir
     engine = CompilationEngine(Etree)
