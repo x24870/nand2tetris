@@ -4,6 +4,10 @@ from xml.dom import minidom
 
 from Tokenizer import _keyword, _symbol, _tokenType
 
+TOKEN_FILE = '_Token.xml'
+GEN_CODE_FILE = '_Gen.xml'
+PRETTY_PRINT_FILE = '_Pretty.xml'
+
 _op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 
 _statements_type = ['let', 'if', 'while', 'do', 'return']
@@ -289,7 +293,7 @@ def pretty_format_xml(file_path, tree):
     first_nl = xmlstr.find('\n')
     xmlstr = xmlstr[first_nl+1:]
 
-    des = os.path.join(srcPath, srcName.replace('_Gen.xml', '_Pretty.xml'))
+    des = os.path.join(srcPath, srcName.replace(GEN_CODE_FILE, PRETTY_PRINT_FILE))
     with open(des, 'w') as f:
         for line in xmlstr:
             f.write(line)
@@ -325,7 +329,7 @@ if __name__ == '__main__':
     engine = CompilationEngine(tree)
     engine.CompileClass(engine.desRoot)
 
-    desName = srcName.split('_Token.xml')[0] + '_Gen.xml'
+    desName = srcName.split(TOKEN_FILE)[0] + GEN_CODE_FILE
     engine.desTree._setroot(engine.desTree.getroot()[0])#skip first empty token
     engine.desTree.write(os.path.join(path, desName), short_empty_elements=False)
 
