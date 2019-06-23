@@ -13,6 +13,7 @@ class JackAnalyzer():
         if os.path.isdir(path):
             for filename in os.listdir(path):
                 if filename.endswith('.jack'):
+                    print('Processing file: {}'.format(os.path.join(path, filename)))
                     self._process_token_file(os.path.join(path, filename))
                     tokenFileName = filename.replace('.jack', CompilationEngine.TOKEN_FILE)
                     self._generate_code_file(os.path.join(path, tokenFileName))
@@ -22,6 +23,7 @@ class JackAnalyzer():
             if not filename.endswith('.jack'):
                 print('{} is not a jack file'.format(filename))
                 exit()
+            print('Processing file: {}'.format(path))
             self._process_token_file(path)
             tokenFileName = filename.replace('.jack', CompilationEngine.TOKEN_FILE)
             self._generate_code_file(os.path.join(path, tokenFileName))
