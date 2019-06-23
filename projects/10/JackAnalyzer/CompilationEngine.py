@@ -4,11 +4,15 @@ from xml.dom import minidom
 
 from Tokenizer import _keyword, _symbol, _tokenType
 
+_DBG_MSG = False
+
 TOKEN_FILE = '_Token.xml'
 GEN_CODE_FILE = '_Gen.xml'
 PRETTY_PRINT_FILE = '_Pretty.xml'
 
 _op = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
+
+_unaryOp = ['~', '-']
 
 _statements_type = ['let', 'if', 'while', 'do', 'return']
 
@@ -28,9 +32,11 @@ class CompilationEngine():
 
     def func_msg(func, *args, **kwargs):
         def wrap(*args, **kwargs):
-            print('    INTO {}'.format(func.__name__))
+            if _DBG_MSG: 
+                print('    INTO {}'.format(func.__name__))
             func(*args, **kwargs)
-            print('    LEAVE {}'.format(func.__name__))
+            if _DBG_MSG:
+                print('    LEAVE {}'.format(func.__name__))
         return wrap
 
     @func_msg
@@ -210,7 +216,7 @@ class CompilationEngine():
             self._eat('CONST', root)
         elif e.tag == 'identifier' and self._get_next_src_element().text != '.':
             #varName | varName['expression']
-            print("***varName***")
+            #print("***varName***")
             self._eat('CONST', root)
             if self._get_cur_src_element().text == '[':
                 self._eat('[', root)
@@ -222,7 +228,7 @@ class CompilationEngine():
             self._eat('(', root)
             self.CompileExpression(root)
             self._eat(')', root)
-        elif e.text in _op:
+        elif e.text in _unaryOp:
             self._eat('CONST', root)#unaryOp
             self.CompileTerm(root)
         else:
@@ -237,21 +243,21 @@ class CompilationEngine():
         root = self._get_last_child(parent)
         if self._get_cur_src_element().text != ')':
             self.CompileExpression(root)
-            
+
         while self._get_cur_src_element().text == ',':
             self._eat(',', root)
             self.CompileExpression(root)
 
     #This function is not defined in lecture API, but I think implement this function is better solution
     def _compileSubroutineCall(self, parent):
-            print("***subroutineCall***")
+            #print("***subroutineCall***")
             self._eat('CONST', parent)#subroutineName
             if self._get_cur_src_element().text == '(':
                 self._eat('(', parent)
                 self.CompileExpressionList(parent)
                 self._eat(')', parent)
             elif self._get_cur_src_element().text == '.':
-                print("** DOT **")
+                #print("** DOT **")
                 self._eat('.', parent)
                 self._eat('CONST', parent)#subroutineName
                 self._eat('(', parent)
@@ -272,7 +278,8 @@ class CompilationEngine():
             else:
                 root.append(e)
                 self.idx += 1 #advance
-        print("idx: {}, tag: {}, text: {}".format(self.idx, e.tag, e.text))
+        if _DBG_MSG:
+            print("idx: {}, tag: {}, text: {}".format(self.idx, e.tag, e.text))
 
     def _get_cur_src_element(self):
         return self.e_lst[self.idx]
