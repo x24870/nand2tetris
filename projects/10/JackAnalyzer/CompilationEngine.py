@@ -28,8 +28,9 @@ class CompilationEngine():
 
     def func_msg(func, *args, **kwargs):
         def wrap(*args, **kwargs):
-            print('INTO {}'.format(func.__name__))
+            print('    INTO {}'.format(func.__name__))
             func(*args, **kwargs)
+            print('    LEAVE {}'.format(func.__name__))
         return wrap
 
     @func_msg
@@ -39,9 +40,9 @@ class CompilationEngine():
         self._eat('class', root)
         self._eat('CONST', root)#class name
         self._eat('{', root)
-        if self._get_cur_src_element().text in ['static', 'field']:
+        while self._get_cur_src_element().text in ['static', 'field']:
             self.CompileClassVarDec(root)
-        if self._get_cur_src_element().text in ['constructor', 'function', 'method']:
+        while self._get_cur_src_element().text in ['constructor', 'function', 'method']:
             self.CompileSubroutineDec(root)
         self._eat('}', root)
 
@@ -49,9 +50,11 @@ class CompilationEngine():
     def CompileClassVarDec(self, parent):
         parent.append(ET.Element('classVarDec'))
         root = self._get_last_child(parent)
+        if self._get_cur_src_element().text in ['static', 'field']:
+            self._eat('CONST', root)
         self._eat('CONST', root)#type
         self._eat('CONST', root)#varName
-        while self._get_next_src_element().text == ',':
+        while self._get_cur_src_element().text == ',':
             self._eat(',', root)
             self._eat('CONST', root)#varName
         self._eat(';', root)
@@ -72,10 +75,10 @@ class CompilationEngine():
     def CompileParameterList(self, parent):
         parent.append(ET.Element('parameterList'))
         root = self._get_last_child(parent)
-        while self._get_next_src_element().tag == 'keyword':
+        while self._get_cur_src_element().tag == 'keyword':
             self._eat('CONST', root)#type
-            self._eat('CONSt', root)#varName
-            if self._get_next_src_element().text == ',':
+            self._eat('CONST', root)#varName
+            if self._get_cur_src_element().text == ',':
                 self._eat(',', root)
 
     @func_msg
@@ -139,7 +142,7 @@ class CompilationEngine():
 
     @func_msg
     def CompileIf(self, parent):
-        parent.append(ET.Element('IfStatement'))
+        parent.append(ET.Element('ifStatement'))
         root = self._get_last_child(parent)
         self._eat('if', root)
         self._eat('(', root)
@@ -149,10 +152,11 @@ class CompilationEngine():
         self.CompileStatements(root)
         self._eat('}', root)
 
-        if self._get_next_src_element().text == 'else':
-            self._eat('(', root)
+        if self._get_cur_src_element().text == 'else':
+            self._eat('else', root)
+            self._eat('{', root)
             self.CompileStatements(root)
-            self._eat(')', root)
+            self._eat('}', root)
 
     @func_msg
     def CompileWhile(self, parent):
@@ -231,11 +235,11 @@ class CompilationEngine():
     def CompileExpressionList(self, parent):
         parent.append(ET.Element('expressionList'))
         root = self._get_last_child(parent)
-        #print("******" + self._get_cur_src_element().text )
         if self._get_cur_src_element().text != ')':
             self.CompileExpression(root)
-
-        while self._get_next_src_element().text == ',':
+            
+        while self._get_cur_src_element().text == ',':
+            self._eat(',', root)
             self.CompileExpression(root)
 
     #This function is not defined in lecture API, but I think implement this function is better solution
