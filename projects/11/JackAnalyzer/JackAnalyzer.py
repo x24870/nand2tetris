@@ -25,8 +25,8 @@ class JackAnalyzer():
                 exit()
             print('Processing file: {}'.format(path))
             self._process_token_file(path)
-            tokenFileName = filename.replace('.jack', CompilationEngine.TOKEN_FILE)
-            self._generate_code_file(os.path.join(path, tokenFileName))
+            path = path.replace('.jack', CompilationEngine.TOKEN_FILE)
+            self._generate_code_file(path)
         else:
             print("'{}' is not a valid path".format(path))
             
