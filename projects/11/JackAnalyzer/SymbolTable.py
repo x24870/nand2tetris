@@ -20,6 +20,7 @@ class SymbolTable():
         self.subroutine_table.var_count = 0
 
     def define(self, name, type_, kind):
+        print('New Def: {} {} {}'.format(kind, type_, name))
         if kind == 'static':
             self.table[name] = {'type': type_, 'kind': 'static', 'idx': self.static_count}
             self.static_count += 1
