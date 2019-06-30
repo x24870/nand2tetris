@@ -50,8 +50,9 @@ class JackAnalyzer():
         tree = ET.ElementTree(file=src)
         engine = CompilationEngine.CompilationEngine(tree)
         engine.CompileClass(engine.desRoot)
-
+        
         des = src.split(CompilationEngine.TOKEN_FILE)[0] + CompilationEngine.GEN_CODE_FILE
+        path = os.path.dirname(src)
         engine.desTree._setroot(engine.desTree.getroot()[0])#skip first empty token
         engine.desTree.write(os.path.join(path, des), short_empty_elements=False)
 
