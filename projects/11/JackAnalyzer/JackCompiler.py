@@ -51,7 +51,8 @@ class JackCompiler():
 
     def _build_local_table(self, dec_tree, table, className):
         #Add this to subroutine table
-        table.define('this', className,'arg')
+        if dec_tree.findall('./')[0].text == 'method':
+            table.define('this', className,'arg')
 
         #add parameters to subroutine table
         parameterList_elements = dec_tree.findall('./parameterList/')
