@@ -29,14 +29,14 @@ class JackCompiler():
 
         print('---------global table------------')
         self._build_global_table(src_tree, table)
-        print(json.dumps(table.table ,sort_keys=True, indent=4))
+        #print(json.dumps(table.table ,sort_keys=True, indent=4))
 
         subroutineDecs = src_tree.findall('./subroutineDec')
         className = src_tree.findall('./')[1].text
         for dec in subroutineDecs:
             print('---------local table: {}------------'.format(dec.findall('./')[2].text))
             self._build_local_table(dec, table, className)
-            print(json.dumps(table.subroutine_table.table ,sort_keys=True, indent=4))
+            #print(json.dumps(table.subroutine_table.table ,sort_keys=True, indent=4))
 
         #TODO: generate vm code
 
@@ -52,22 +52,22 @@ class JackCompiler():
     def _build_local_table(self, dec_tree, table, className):
         #Add this to subroutine table
         table.define('this', className,'arg')
-        for e in dec_tree:
-            #TODO: add parameters to subroutine table
-            parameters = e.findall('./parameterList')
-            print(parameters)
-            if parameters:
-                idx = 0
-                while idx < len(parameters):
-                    table.define(parameters[idx+1].text, parameters[idx].text, 'arg')
-                    idx += 3
-            #TODO: add variables to subroutine table
-            variables = e.findall('./varDec/')
-            if variables:
-                idx = 0
-                while idx < len(parameters):
-                    table.define(parameters[idx+1].text, parameters[idx].text, 'arg')
-                    idx += 3
+
+        #add parameters to subroutine table
+        parameterList_elements = dec_tree.findall('./parameterList/')
+        if parameterList_elements:
+            idx = 0
+            while idx < len(parameterList_elements):
+                table.define(parameterList_elements[idx+1].text, parameterList_elements[idx].text, 'arg')
+                idx += 3
+
+        #add variables to subroutine table
+        varDec_elements = dec_tree.findall('./subroutineBody/varDec')
+        for varDec_e in varDec_elements:
+            idx = 2
+            while idx < len(varDec_e):
+                table.define(varDec_e[idx].text, varDec_e[1].text, 'var')
+                idx += 2
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
