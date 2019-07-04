@@ -14,7 +14,13 @@ class VMWriter():
         pass
 
     def writeArithmetic(self, command):
-        pass
+        if command == '+':
+            self.fp.write('add\n')
+        elif command == '-':
+            self.fp.write('sub\n')
+        elif command == '*':
+            self.fp.write('call Math.multiply 2\n')
+
 
     def writeLabel(self, label):
         pass
@@ -29,14 +35,12 @@ class VMWriter():
         pass
 
     def writeFunction(self, name, nLocals):
-        return 'function {} {}'.format(name, nLocals)
+        self.fp.write('function {} {}\n'.format(name, nLocals))
 
     def writeReturn(self):
         pass
 
-    def gen_vm_code(self, classNmae, tree):
-        for e in tree.iter():
-            print(e.text)
+
 
 if __name__ == '__main__':
     vmWriter = VMWriter('./text.txt')

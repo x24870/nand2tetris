@@ -39,7 +39,7 @@ class JackCompiler():
             print('---------local table: {}------------'.format(dec.findall('./')[2].text))
             self._build_local_table(dec, table, className)
             #print(json.dumps(table.subroutine_table.table ,sort_keys=True, indent=4))
-            vmWriter.gen_vm_code(className, dec)
+            self._gen_vm_code(vmWriter, table, className, dec)
         
         vmWriter.close()
 
@@ -72,6 +72,38 @@ class JackCompiler():
             while idx < len(varDec_e):
                 table.define(varDec_e[idx].text, varDec_e[1].text, 'var')
                 idx += 2
+
+    def _gen_vm_code(self, vmWriter, table, classNmae, tree):
+        tree_e = tree.findall('./')
+        #compile function
+        vmWriter.writeFunction('{}.{}'.format(classNmae, tree_e[2].text), table.VarCount('VAR'))
+
+        #compile statements
+        statements_e = tree.findall('./subroutineBody/statements/')
+        for e in statements_e:
+            if e.tag == 'letStatement':
+                pass
+            elif e.tag == 'ifStatement':
+                pass
+            elif e.tag == 'whileStatement':
+                pass
+            elif e.tag == 'doStatement':
+                self._compile_do(vmWriter, table, e)
+            elif e.tag == 'returnStatement':
+                pass
+            else:
+                print('ERROR: invalide statement "{}"'.format(e.tag))
+
+    def _compile_do(self, vmWriter, table, tree):
+        idx = 1
+        func = ''
+        e_lst = tree.findall('./')
+        while e_lst[idx].text != '(':
+            func += e_lst[idx].text
+            idx += 1
+        vmWriter.writeFunction(func, 5)
+            
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
