@@ -56,8 +56,7 @@ class SymbolTable():
         elif self.subroutine_table.table.get(name):
             return self.subroutine_table.table.get(name).get('kind')
         else:
-            print('Symbol table KindOf error')
-            exit()
+            return 'constant'
     
     def TypeOf(self, name):
         if self.table.get(name):
@@ -74,8 +73,7 @@ class SymbolTable():
         elif self.subroutine_table.table.get(name):
             return self.subroutine_table.table.get(name).get('idx')
         else:
-            print('Symbol table IndexOf error')
-            exit()
+            return name
 
 if __name__ == '__main__':
     s_table = SymbolTable()

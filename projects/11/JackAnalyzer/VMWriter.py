@@ -7,8 +7,8 @@ class VMWriter():
     def close(self):
         self.fp.close()
 
-    def writePusn(self, segment, index):
-        pass
+    def writePush(self, segment, index):
+        self.fp.write('push {} {}'.format(segment, index))
 
     def writePop(self, segment, index):
         pass
@@ -32,7 +32,7 @@ class VMWriter():
         pass
 
     def writeCall(self, name, nArgs):
-        pass
+        self.fp.write('call {} {}'.format(name, nArgs))
 
     def writeFunction(self, name, nLocals):
         self.fp.write('function {} {}\n'.format(name, nLocals))
