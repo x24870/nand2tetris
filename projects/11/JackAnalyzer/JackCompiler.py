@@ -92,14 +92,13 @@ class JackCompiler():
             elif e.tag == 'doStatement':
                 self._compile_do(e)
             elif e.tag == 'returnStatement':
-                pass
+                self._compile_return(e)
             else:
                 print('ERROR: invalide statement "{}"'.format(e.tag))
 
     def _compile_do(self, tree):
         #expressionList
         self._compile_expressionList(tree.find('./expressionList'))
-        #print( list(tree.find('./expressionList').iter()) )
 
         #function
         idx = 1
@@ -110,31 +109,54 @@ class JackCompiler():
             idx += 1
         self.vmWriter.writeCall(func, self._cal_call_args( tree.find('./expressionList') ))
 
-        #return
+        self.vmWriter.writePop('temp', '0')
+
+    def _compile_return(self, return_tree):
+        return_void = True
+        for e in return_tree:
+            if e.tag == 'expression':
+                return_void = False
+                self._compile_expression(e)
+
+        if return_void:
+            self.vmWriter.writePush('constant', 0)
+
+        self.vmWriter.writeReturn()
 
     def _cal_call_args(self, expressionList_tree):
         count = 1
-        for e in expressionList_tree.iter():
+        for e in expressionList_tree:
             if e.text == ',':
                 count += 1
         return count
 
     def _compile_expressionList(self, expressionList_tree):
         for e in expressionList_tree.findall('./expression'):
-            print(e.tag)
-            #self._compile_expression(e)
+            #print(e.tag)
+            self._compile_expression(e)
 
     def _compile_expression(self, expression_tree):
         operator_buf = []
-        for e in expression_tree.iter():
+        for e in expression_tree:
+            #print(e)
             if e.tag == 'term':
-                self.vmWriter.writePush(self.table.KindOf(e.text), self.table.IndexOf(e.text))
+                self._compile_term(e)
             elif e.tag == 'symbol':
                 operator_buf.append(e.text)
-            elif e.tag == 'expression':
-                self._compile_expression(e)
             else:
-                print('Compile expression ERROR: <{}>{}'.format(e.tag, e.text))
+                print('Compile expression ERROR: <{}> {}'.format(e.tag, e.text))
+
+        operator_buf.reverse()
+        for operator in operator_buf:
+            self.vmWriter.writeArithmetic(operator)
+
+
+    def _compile_term(self, term_tree):
+        for e in term_tree:
+            if e.tag == 'expression':
+                self._compile_expression(e)
+            elif e.tag == 'integerConstant':
+                self.vmWriter.writePush(self.table.KindOf(e.text), self.table.IndexOf(e.text))
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -8,10 +8,10 @@ class VMWriter():
         self.fp.close()
 
     def writePush(self, segment, index):
-        self.fp.write('push {} {}'.format(segment, index))
+        self.fp.write('push {} {}\n'.format(segment, index))
 
     def writePop(self, segment, index):
-        pass
+        self.fp.write('pop {} {}\n'.format(segment, index))
 
     def writeArithmetic(self, command):
         if command == '+':
@@ -32,13 +32,13 @@ class VMWriter():
         pass
 
     def writeCall(self, name, nArgs):
-        self.fp.write('call {} {}'.format(name, nArgs))
+        self.fp.write('call {} {}\n'.format(name, nArgs))
 
     def writeFunction(self, name, nLocals):
         self.fp.write('function {} {}\n'.format(name, nLocals))
 
     def writeReturn(self):
-        pass
+        self.fp.write('return')
 
 
 
