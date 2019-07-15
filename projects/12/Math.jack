@@ -8,13 +8,36 @@
  * Note: Jack compilers implement multiplication and division using OS method calls.
  */
 class Math {
+    static int BITS;
 
     /** Initializes the library. */
     function void init() {
+        let BITS = Array.new(16);
+        let BITS[0] = 1;
+        let BITS[1] = 2;
+        let BITS[2] = 4;
+        let BITS[3] = 8;
+        let BITS[4] = 16;
+        let BITS[5] = 32;
+        let BITS[6] = 64;
+        let BITS[7] = 128;
+        let BITS[8] = 256;
+        let BITS[9] = 512;
+        let BITS[10] = 1024;
+        let BITS[11] = 2048;
+        let BITS[12] = 4096;
+        let BITS[13] = 8192;
+        let BITS[14] = 16384;
+        let BITS[15] = 32768;
     }
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
+        if(bit(x, 15)){
+            return ~x;
+        }
+
+        return x;
     }
 
     /** Returns the product of x and y. 
@@ -23,6 +46,24 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
+        var sum, shiftedX;
+        let sum = 0;
+        let shiftedX = x;
+        let w = 0;
+
+        while(w < 16){  //Jack platform is 16 bit machine
+            if(Math.bit(y, w)){
+                let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX * 2;
+            let w = w + 1;
+        }
+
+        return sum;
+    }
+
+    function boolean bit(int x, int n){
+        return x & BITS[n];
     }
 
     /** Returns the integer part of x/y.
@@ -39,9 +80,19 @@ class Math {
 
     /** Returns the greater number. */
     function int max(int a, int b) {
+        if(a > b){
+            return a;
+        }
+
+        return b;
     }
 
     /** Returns the smaller number. */
     function int min(int a, int b) {
+        if (a < b){
+            return a;
+        }
+
+        return b;
     }
 }
